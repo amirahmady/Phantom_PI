@@ -20,7 +20,9 @@ def read_csv_file(filename="trajectory.csv"):
     return data
 
 
-def motors_init():
+
+
+def main():
     PyTrinamic.showInfo()
     print("PyTrinamic.showInfo()")
     connectionManager = ConnectionManager(argList=['--interface', 'pcan_tmcl'])
@@ -36,14 +38,13 @@ def motors_init():
 
     mouduleTMCM_1276.setMaxAcceleration(100000)
     mouduleTMCM_1276.setMaxVelocity(maxSpeed)
-    mouduleTMCM_1276.setAxisParameter(TMCM_1276.APs.CurrentStepping, Stepping)
-    pass
-
-
-def main():
-    motors_init()
-    print("Start position is:", TMCM_1276.getActualPosition())
+    mouduleTMCM_1276.setAxisParameter(mouduleTMCM_1276.APs.CurrentStepping, Stepping)
+    print("Start position is:", mouduleTMCM_1276.getActualPosition())
     # print(TMCM_1276.getGlobalParameter(CANBitrate,bank),CANBitrate,'***',bank)
+    mouduleTMCM_1276.moveBy(mouduleTMCM_1276.getActualPosition()+10000)
+    mouduleTMCM_1276.getAxisParameter(mouduleTMCM_1276.APs.ActualPosition)
+    while not (mouduleTMCM_1276.positionReached()):
+        pass
 
     trajectoryFile = "trajectory.csv"
     trajectoryData = read_csv_file(trajectoryFile)
