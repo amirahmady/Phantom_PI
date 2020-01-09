@@ -1,0 +1,57 @@
+<problems>
+  <problem>
+  <file>file://$PROJECT_DIR$/test.py</file>
+  <line>45</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/test.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local</problem_class>
+  <description>Parameter 'unit' value is not used</description>
+  <highlighted_element>unit='SI'</highlighted_element>
+  <offset>44</offset>
+  <length>9</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/test.py</file>
+  <line>62</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/test.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local</problem_class>
+  <description>Local variable 'DEFAULT_MOTOR' value is not used</description>
+  <highlighted_element>DEFAULT_MOTOR</highlighted_element>
+  <offset>4</offset>
+  <length>13</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/test.py</file>
+  <line>64</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/test.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local</problem_class>
+  <description>Local variable 'lead' value is not used</description>
+  <highlighted_element>lead</highlighted_element>
+  <offset>4</offset>
+  <length>4</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/test.py</file>
+  <line>15</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/test.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local</problem_class>
+  <description>Parameter 'filename' value is not used</description>
+  <highlighted_element>filename=&quot;trajectory.csv&quot;</highlighted_element>
+  <offset>18</offset>
+  <length>25</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/readcsvfile.pyt.py</file>
+  <line>6</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/readcsvfile.pyt.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="NOT_USED_ELEMENT_ATTRIBUTES">Unused local</problem_class>
+  <description>Parameter 'data' value is not used</description>
+  <highlighted_element>data</highlighted_element>
+  <offset>23</offset>
+  <length>4</length>
+</problem>
+</problems>

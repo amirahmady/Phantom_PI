@@ -1,0 +1,163 @@
+<problems>
+  <problem>
+  <file>file://$PROJECT_DIR$/pican_hat_test.py</file>
+  <line>7</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/pican_hat_test.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">PEP 8 coding style violation</problem_class>
+  <description>PEP 8: expected 2 blank lines, found 1</description>
+  <highlighted_element>def producer(id):</highlighted_element>
+  <offset>0</offset>
+  <length>17</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/pican_hat_test.py</file>
+  <line>16</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/pican_hat_test.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">PEP 8 coding style violation</problem_class>
+  <description>PEP 8: expected 2 blank lines after class or function definition, found 1</description>
+  <highlighted_element>producer(10)</highlighted_element>
+  <offset>0</offset>
+  <length>12</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/thinker_test.py</file>
+  <line>10</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/thinker_test.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">PEP 8 coding style violation</problem_class>
+  <description>PEP 8: unexpected spaces around keyword / parameter equals</description>
+  <highlighted_element />
+  <offset>30</offset>
+  <length>1</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/thinker_test.py</file>
+  <line>10</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/thinker_test.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">PEP 8 coding style violation</problem_class>
+  <description>PEP 8: unexpected spaces around keyword / parameter equals</description>
+  <highlighted_element />
+  <offset>32</offset>
+  <length>1</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/thinker_test.py</file>
+  <line>15</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/thinker_test.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">PEP 8 coding style violation</problem_class>
+  <description>PEP 8: unexpected spaces around keyword / parameter equals</description>
+  <highlighted_element />
+  <offset>18</offset>
+  <length>1</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/thinker_test.py</file>
+  <line>15</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/thinker_test.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">PEP 8 coding style violation</problem_class>
+  <description>PEP 8: unexpected spaces around keyword / parameter equals</description>
+  <highlighted_element />
+  <offset>20</offset>
+  <length>1</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/thinker_test.py</file>
+  <line>21</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/thinker_test.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">PEP 8 coding style violation</problem_class>
+  <description>PEP 8: unexpected spaces around keyword / parameter equals</description>
+  <highlighted_element />
+  <offset>20</offset>
+  <length>1</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/test.py</file>
+  <line>45</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/test.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">PEP 8 coding style violation</problem_class>
+  <description>PEP 8: expected 2 blank lines, found 1</description>
+  <highlighted_element>def move_to_pos(mouduleTMCM_1276, position, unit='SI'):</highlighted_element>
+  <offset>0</offset>
+  <length>55</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/tcmlcontrol.py</file>
+  <line>27</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tcmlcontrol.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">PEP 8 coding style violation</problem_class>
+  <description>PEP 8: statement ends with a semicolon</description>
+  <highlighted_element />
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/tcmlcontrol.py</file>
+  <line>34</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tcmlcontrol.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">PEP 8 coding style violation</problem_class>
+  <description>PEP 8: statement ends with a semicolon</description>
+  <highlighted_element />
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/tcmlcontrol.py</file>
+  <line>58</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tcmlcontrol.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">PEP 8 coding style violation</problem_class>
+  <description>PEP 8: no newline at end of file</description>
+  <highlighted_element>)</highlighted_element>
+  <offset>18</offset>
+  <length>1</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/readcsvfile.pyt.py</file>
+  <line>9</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/readcsvfile.pyt.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">PEP 8 coding style violation</problem_class>
+  <description>PEP 8: expected 2 blank lines, found 1</description>
+  <highlighted_element>def startTimer(data):</highlighted_element>
+  <offset>0</offset>
+  <length>21</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/readcsvfile.pyt.py</file>
+  <line>13</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/readcsvfile.pyt.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">PEP 8 coding style violation</problem_class>
+  <description>PEP 8: expected 2 blank lines after class or function definition, found 1</description>
+  <highlighted_element>with open(&quot;trajectory.csv&quot;) as trajFile:</highlighted_element>
+  <offset>0</offset>
+  <length>40</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/readcsvfile.pyt.py</file>
+  <line>15</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/readcsvfile.pyt.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">PEP 8 coding style violation</problem_class>
+  <description>PEP 8: at least two spaces before inline comment</description>
+  <highlighted_element />
+  <offset>16</offset>
+  <length>1</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/parser.py</file>
+  <line>9</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/parser.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">PEP 8 coding style violation</problem_class>
+  <description>PEP 8: no newline at end of file</description>
+  <highlighted_element>)</highlighted_element>
+  <offset>51</offset>
+  <length>1</length>
+</problem>
+</problems>

@@ -1,0 +1,46 @@
+<problems>
+  <problem>
+  <file>file://$PROJECT_DIR$/test.py</file>
+  <line>2</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/test.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Single quoted docstring</problem_class>
+  <description>Triple double-quoted strings should be used for docstrings.</description>
+  <highlighted_element>'''</highlighted_element>
+  <offset>0</offset>
+  <length>3</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/test.py</file>
+  <line>6</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/test.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Single quoted docstring</problem_class>
+  <description>Triple double-quoted strings should be used for docstrings.</description>
+  <highlighted_element>'''</highlighted_element>
+  <offset>0</offset>
+  <length>3</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/tcmlcontrol.py</file>
+  <line>2</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tcmlcontrol.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Single quoted docstring</problem_class>
+  <description>Triple double-quoted strings should be used for docstrings.</description>
+  <highlighted_element>'''</highlighted_element>
+  <offset>0</offset>
+  <length>3</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/tcmlcontrol.py</file>
+  <line>6</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tcmlcontrol.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Single quoted docstring</problem_class>
+  <description>Triple double-quoted strings should be used for docstrings.</description>
+  <highlighted_element>'''</highlighted_element>
+  <offset>0</offset>
+  <length>3</length>
+</problem>
+</problems>

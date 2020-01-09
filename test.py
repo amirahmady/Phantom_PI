@@ -58,7 +58,7 @@ def main():
     myInterface = connectionManager.connect()
     mouduleTMCM_1276 = TMCM_1276(myInterface)
     maxSpeed = 12800
-    maxAcceleration = 100000
+    maxAcceleration = 50000
     DEFAULT_MOTOR = 0
     Stepping = 256
     lead = lead_per_pulse(256, 0.10, 'in')

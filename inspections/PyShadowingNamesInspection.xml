@@ -1,0 +1,24 @@
+<problems>
+  <problem>
+  <file>file://$PROJECT_DIR$/readcsvfile.pyt.py</file>
+  <line>6</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/readcsvfile.pyt.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Shadowing names from outer scopes</problem_class>
+  <description>Shadows name 'data' from outer scope</description>
+  <highlighted_element>data</highlighted_element>
+  <offset>23</offset>
+  <length>4</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/readcsvfile.pyt.py</file>
+  <line>9</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/readcsvfile.pyt.py" />
+  <problem_class severity="WEAK WARNING" attribute_key="INFO_ATTRIBUTES">Shadowing names from outer scopes</problem_class>
+  <description>Shadows name 'data' from outer scope</description>
+  <highlighted_element>data</highlighted_element>
+  <offset>15</offset>
+  <length>4</length>
+</problem>
+</problems>

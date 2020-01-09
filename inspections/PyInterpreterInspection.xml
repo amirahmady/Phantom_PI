@@ -1,0 +1,79 @@
+<problems>
+  <problem>
+  <file>file://$PROJECT_DIR$/pican_hat_test.py</file>
+  <line>1</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/pican_hat_test.py" />
+  <problem_class severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Invalid interpreter configured</problem_class>
+  <description>No Python interpreter configured for the project</description>
+  <highlighted_element>import time import can bustype = 'socketcan_native' channel = 'can0' def producer(id): &quot;&quot;&quot;:par...</highlighted_element>
+  <offset>0</offset>
+  <length>483</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/thinker_test.py</file>
+  <line>1</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/thinker_test.py" />
+  <problem_class severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Invalid interpreter configured</problem_class>
+  <description>No Python interpreter configured for the project</description>
+  <highlighted_element>#!/usr/bin/python3 # widgets.py by Barron Stone # This is an exercise file from Python GUI Developme...</highlighted_element>
+  <offset>0</offset>
+  <length>475</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/test.py</file>
+  <line>1</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/test.py" />
+  <problem_class severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Invalid interpreter configured</problem_class>
+  <description>No Python interpreter configured for the project</description>
+  <highlighted_element>#!/usr/bin/env python3 ''' Move a motor back and forth using the TMCM1276 module Created on 18.11.20...</highlighted_element>
+  <offset>0</offset>
+  <length>2877</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/tcmlcontrol.py</file>
+  <line>1</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/tcmlcontrol.py" />
+  <problem_class severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Invalid interpreter configured</problem_class>
+  <description>No Python interpreter configured for the project</description>
+  <highlighted_element>''' Move a motor back and forth using the TMCM1276 module Created on 18.11.2019 @author: JM ''' imp...</highlighted_element>
+  <offset>0</offset>
+  <length>1159</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/readcsvfile.pyt.py</file>
+  <line>1</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/readcsvfile.pyt.py" />
+  <problem_class severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Invalid interpreter configured</problem_class>
+  <description>No Python interpreter configured for the project</description>
+  <highlighted_element>import threading import csv import threading def myPeriodicFunction(data): print(&quot;This loops o...</highlighted_element>
+  <offset>0</offset>
+  <length>442</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/python_can_send.py</file>
+  <line>1</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/python_can_send.py" />
+  <problem_class severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Invalid interpreter configured</problem_class>
+  <description>No Python interpreter configured for the project</description>
+  <highlighted_element>#!/usr/bin/env python # coding: utf-8 &quot;&quot;&quot; This example shows how sending a single message works. &quot;&quot;...</highlighted_element>
+  <offset>0</offset>
+  <length>1057</length>
+</problem>
+  <problem>
+  <file>file://$PROJECT_DIR$/parser.py</file>
+  <line>1</line>
+  <module>TMCL_test_1</module>
+  <entry_point TYPE="file" FQNAME="file://$PROJECT_DIR$/parser.py" />
+  <problem_class severity="WARNING" attribute_key="WARNING_ATTRIBUTES">Invalid interpreter configured</problem_class>
+  <description>No Python interpreter configured for the project</description>
+  <highlighted_element>import argparse parser = argparse.ArgumentParser(description='Short sample app') parser.add_argume...</highlighted_element>
+  <offset>0</offset>
+  <length>312</length>
+</problem>
+</problems>

@@ -24,14 +24,14 @@ TMCM_1276.setMaxAcceleration(9000)
 print("Rotating")
 TMCM_1276.rotate(40000)
 
-time.sleep(5);
+time.sleep(5)
 
 print("Stopping")
 TMCM_1276.stop()
 
 print("ActualPostion")
 print(TMCM_1276.getActualPosition())
-time.sleep(5);
+time.sleep(5)
 
 print("Doubling moved distance")
 TMCM_1276.moveBy(TMCM_1276.getActualPosition(), 50000)
