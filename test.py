@@ -26,7 +26,7 @@ def selecting_first_col(data=list):
 
 def shifting_data(data=list()):
     minimum_postition = min(data)
-    return [float(x)-minimum_postition for x in data]
+    return [float(x)-minimum_postition for x in data], minimum_postition
 
 
 def lead_per_pulse(stepping, leadScrewLead, unit='in'):
@@ -38,7 +38,7 @@ def lead_per_pulse(stepping, leadScrewLead, unit='in'):
     return lead
 
 
-def move_by_mm(mm, lead=4.9609375e-05):
+def unit_to_pulse(mm, lead=4.9609375e-05):
     return round(mm / lead)
 
 
@@ -51,14 +51,22 @@ def move_back_zoro(mouduleTMCM_1276, speed=150000):
 
     print("Reached Position 0")
 
-def move_to_pos(mouduleTMCM_1276, position, unit='SI'):
+def move_by_unit(mouduleTMCM_1276, position, unit='SI'):
     # add in or si postioning
-    mouduleTMCM_1276.moveBy(move_by_mm(position))
+    #print(position, move_by_mm(position))
+    mouduleTMCM_1276.moveBy(unit_to_pulse(position))
     mouduleTMCM_1276.getAxisParameter(mouduleTMCM_1276.APs.ActualPosition)
     while not (mouduleTMCM_1276.positionReached()):
         pass
 
 
+def move_to_unit(mouduleTMCM_1276, position, unit='SI'):
+    # add in or si postioning
+    #print(position, move_by_mm(position))
+    mouduleTMCM_1276.moveTo(unit_to_pulse(position))
+    mouduleTMCM_1276.getAxisParameter(mouduleTMCM_1276.APs.ActualPosition)
+    while not (mouduleTMCM_1276.positionReached()):
+        pass
 def main():
     PyTrinamic.showInfo()
     print("Preparing parameters")
@@ -66,8 +74,8 @@ def main():
     # myInterface = "pcan_tmcl"
     myInterface = connectionManager.connect()
     mouduleTMCM_1276 = TMCM_1276(myInterface)
-    maxSpeed = 12800
-    maxAcceleration = 50000
+    maxSpeed = 12800*3
+    maxAcceleration = maxSpeed*2
     DEFAULT_MOTOR = 0
     Stepping = 256
     lead = lead_per_pulse(256, 0.10, 'in')
@@ -88,17 +96,25 @@ def main():
     # print("The position is:", mouduleTMCM_1276.getActualPosition())
 
     trajectoryFile = "trajectory.csv"
-    trajectoryData = shifting_data(selecting_first_col(read_csv_file(trajectoryFile)))
+    trajectoryData, min_position = shifting_data(selecting_first_col(read_csv_file(trajectoryFile)))
 
-    print (min(trajectoryData))
+    #move_to_pos(mouduleTMCM_1276,0.1)
+    #print (min(trajectoryData))
     start = time.time()
-    # curentPostion = 0
-    # for item in trajectoryData[400:600]:
-    #     moveTo = float(item[0]) - curentPostion
-    #     move_to_pos(mouduleTMCM_1276, moveTo)
-    #     curentPostion = moveTo
-    # end = time.time()
-    # print(end - start)
+    #curentPostion = trajectoryData[0]
+    mouduleTMCM_1276.setActualPosition(-unit_to_pulse(min_position)) # set start point of motor
+    #print("curentPostion",curentPostion)
+    for item in trajectoryData[400:600]:
+        start = time.time()
+        #move_difference = round(item - curentPostion, 6)
+        #print('current posistion {0} moving by {1} mm'.format(curentPostion, move_difference))
+        #move_by_unit(mouduleTMCM_1276, move_difference)
+        #curentPostion = round(move_difference + curentPostion,6)
+        move_to_unit(mouduleTMCM_1276,item)
+        #print("actual The position is:", mouduleTMCM_1276.getActualPosition())
+        time_diff = time.time()- start
+        if (time_diff) < 0.02:
+            time.sleep(.02-time_diff)
 
     move_back_zoro(mouduleTMCM_1276)
     myInterface.close()
