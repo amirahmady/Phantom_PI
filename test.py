@@ -19,13 +19,16 @@ def read_csv_file(filename="trajectory.csv"):
         data = [r for r in reader]
     return data
 
+
 def selecting_first_col(data=list):
+    return [float(i[0]) for i in data]
 
 
 def shifting_data(data=list()):
     minimum_postition = min(data)
-    for item in data:
-        item = item
+    return [float(x)-minimum_postition for x in data]
+
+
 def lead_per_pulse(stepping, leadScrewLead, unit='in'):
     if unit.lower() == 'in':
         lead = (leadScrewLead * 25.4) / (200 * stepping)  # 200 is stepper deg
@@ -85,15 +88,17 @@ def main():
     # print("The position is:", mouduleTMCM_1276.getActualPosition())
 
     trajectoryFile = "trajectory.csv"
-    trajectoryData = read_csv_file(trajectoryFile)
+    trajectoryData = shifting_data(selecting_first_col(read_csv_file(trajectoryFile)))
+
+    print (min(trajectoryData))
     start = time.time()
-    curentPostion = 0
-    for item in trajectoryData[400:600]:
-        moveTo = float(item[0]) - curentPostion
-        move_to_pos(mouduleTMCM_1276, moveTo)
-        curentPostion = moveTo
-    end = time.time()
-    print(end - start)
+    # curentPostion = 0
+    # for item in trajectoryData[400:600]:
+    #     moveTo = float(item[0]) - curentPostion
+    #     move_to_pos(mouduleTMCM_1276, moveTo)
+    #     curentPostion = moveTo
+    # end = time.time()
+    # print(end - start)
 
     move_back_zoro(mouduleTMCM_1276)
     myInterface.close()
