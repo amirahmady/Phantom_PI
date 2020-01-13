@@ -19,7 +19,13 @@ def read_csv_file(filename="trajectory.csv"):
         data = [r for r in reader]
     return data
 
+def selecting_first_col(data=list):
 
+
+def shifting_data(data=list()):
+    minimum_postition = min(data)
+    for item in data:
+        item = item
 def lead_per_pulse(stepping, leadScrewLead, unit='in'):
     if unit.lower() == 'in':
         lead = (leadScrewLead * 25.4) / (200 * stepping)  # 200 is stepper deg
