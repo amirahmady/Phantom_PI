@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 '''
 Move a motor back and forth using the TMCM1276 module
-Created on 18.11.2019
-@author: JM
+Created on 18.12.2019
+@author: Amir Ahmady
 '''
 
 import PyTrinamic

@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 '''
 Move a motor back and forth using the TMCM1276 module
-Created on 18.11.2019
-@author: JM
+Created on 18.12.2019
+@author: Amir Ahmady
 '''
 
+
+# sudo ip link set can0 up type can bitrate 1000000
 import PyTrinamic
 from PyTrinamic.connections.ConnectionManager import ConnectionManager
 from PyTrinamic.modules.TMCM_1276 import TMCM_1276
@@ -107,7 +109,7 @@ def main():
     # curentPostion = trajectoryData[0]
     mouduleTMCM_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
     # print("curentPostion",curentPostion)
-    for item in trajectoryDat:
+    for item in trajectoryData:
         start = time.time()
         # move_difference = round(item - curentPostion, 6)
         # print('current posistion {0} moving by {1} mm'.format(curentPostion, move_difference))
