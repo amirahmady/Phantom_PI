@@ -73,7 +73,7 @@ def move_to_unit(mouduleTMCM_1276, position, unit='SI'):
 def main():
     PyTrinamic.showInfo()
     print("Preparing parameters")
-    connectionManager = ConnectionManager(argList=['--interface', 'pcan_tmcl'])
+    connectionManager = ConnectionManager(argList=['--interface', 'socketcan_tmcl'])
     # myInterface = "pcan_tmcl"
     myInterface = connectionManager.connect()
     mouduleTMCM_1276 = TMCM_1276(myInterface)
