@@ -75,7 +75,12 @@ def move_to_unit(mouduleTMCM_1276, position, unit='SI'):
 def main():
     PyTrinamic.showInfo()
     print("Preparing parameters")
-    connectionManager = ConnectionManager(argList=['--interface', 'socketcan_tmcl'])
+    a = input("1 or enter for RASPI, 2 for PICAN connection:")
+    if a == 2 :
+        connectionManager = ConnectionManager(argList=['--interface', 'pcan_tmcl'])
+    else:
+        connectionManager = ConnectionManager(argList=['--interface', 'socketcan_tmcl'])
+
     # myInterface = "pcan_tmcl"
     myInterface = connectionManager.connect()
     mouduleTMCM_1276 = TMCM_1276(myInterface)
@@ -90,6 +95,7 @@ def main():
     mouduleTMCM_1276.setAxisParameter(mouduleTMCM_1276.APs.CurrentStepping, Stepping)
     print('max speed is:', mouduleTMCM_1276.getMaxVelocity())
     print("Start position is:", mouduleTMCM_1276.getActualPosition())
+    mouduleTMCM_1276.setActualPosition(0)
     move_back_zoro(mouduleTMCM_1276)
 
     # moveBymm = move_by_mm(0.1)
