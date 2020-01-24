@@ -4,14 +4,16 @@ Move a motor back and forth using the TMCM1276 module
 Created on 18.12.2019
 @author: Amir Ahmady
 '''
-
-
 # sudo ip link set can0 up type can bitrate 1000000
+
+
+import argparse
+import csv
+import time
+
 import PyTrinamic
 from PyTrinamic.connections.ConnectionManager import ConnectionManager
 from PyTrinamic.modules.TMCM_1276 import TMCM_1276
-import time
-import csv
 
 
 def read_csv_file(filename="trajectory.csv"):
@@ -22,13 +24,13 @@ def read_csv_file(filename="trajectory.csv"):
     return data
 
 
-def selecting_first_col(data=list):
-    return [float(i[0]) for i in data]
+def selecting_column(data=list, column_number=0):
+    return [float(i[column_number]) for i in data]
 
 
 def shifting_data(data=list()):
-    minimum_postition = min(data)
-    return [float(x) - minimum_postition for x in data], minimum_postition
+    minimum_position = min(data)
+    return [float(x) - minimum_position for x in data], minimum_position
 
 
 def lead_per_pulse(stepping, leadScrewLead, unit='in'):
@@ -72,64 +74,58 @@ def move_to_unit(mouduleTMCM_1276, position, unit='SI'):
         pass
 
 
-def main():
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Respiration code')
+    output = {"pcan": "pcan_tmcl",
+              "p": "pcan_tmcl",
+              "socketcan": "socketcan_tmcl",
+              "s": "socketcan_tmcl"
+              }
+    parser.add_argument('-c', '--connection', dest='connection', choices=['socketcan', 'pcan'],
+                        help="use socketcan or pcan as connection", required=True, type=str)
+    parser.add_argument('remaining_args', nargs=argparse.REMAINDER)
+    args = parser.parse_args()
+    return output[args.connection]
+
+
+def main(*args):
     PyTrinamic.showInfo()
-    print("Preparing parameters")
-    a = input("1 or enter for RASPI, 2 for PICAN connection:")
-    if a == 2 :
-        connectionManager = ConnectionManager(argList=['--interface', 'pcan_tmcl'])
-    else:
-        connectionManager = ConnectionManager(argList=['--interface', 'socketcan_tmcl'])
+    print(args[0])
+    connection_manager = ConnectionManager(argList=['--interface', args[0]])
 
     # myInterface = "pcan_tmcl"
-    myInterface = connectionManager.connect()
-    mouduleTMCM_1276 = TMCM_1276(myInterface)
-    maxSpeed = 12800 * 3
-    maxAcceleration = maxSpeed * 2
-    DEFAULT_MOTOR = 0
-    Stepping = 256
+    my_interface = connection_manager.connect()
+    moudule_tmcm_1276 = TMCM_1276(my_interface)
+    max_speed = 12800 * 3
+    max_acceleration = max_speed * 2
+    default_motor = 0
+    stepping = 256
     lead = lead_per_pulse(256, 0.10, 'in')
 
-    mouduleTMCM_1276.setMaxAcceleration(maxAcceleration)
-    mouduleTMCM_1276.setMaxVelocity(maxSpeed)
-    mouduleTMCM_1276.setAxisParameter(mouduleTMCM_1276.APs.CurrentStepping, Stepping)
-    print('max speed is:', mouduleTMCM_1276.getMaxVelocity())
-    print("Start position is:", mouduleTMCM_1276.getActualPosition())
-    mouduleTMCM_1276.setActualPosition(0)
-    move_back_zoro(mouduleTMCM_1276)
+    moudule_tmcm_1276.setMaxAcceleration(max_acceleration)
+    moudule_tmcm_1276.setMaxVelocity(max_speed)
+    moudule_tmcm_1276.setAxisParameter(moudule_tmcm_1276.APs.CurrentStepping, stepping)
+    print('max speed is:', moudule_tmcm_1276.getMaxVelocity())
+    print("Start position is:", moudule_tmcm_1276.getActualPosition())
+    moudule_tmcm_1276.setActualPosition(0)
+    move_back_zoro(moudule_tmcm_1276)
 
-    # moveBymm = move_by_mm(0.1)
-    # print(moveBymm)
-    # mouduleTMCM_1276.moveBy(moveBymm)
-    # mouduleTMCM_1276.getAxisParameter(mouduleTMCM_1276.APs.ActualPosition)
-    # while not (mouduleTMCM_1276.positionReached()):
-    #     pass
-    # print("The position is:", mouduleTMCM_1276.getActualPosition())
+    trajectory_file = "trajectory.csv"
+    trajectory_data, min_position = shifting_data(selecting_column(read_csv_file(trajectory_file), column_number=0))
 
-    trajectoryFile = "trajectory.csv"
-    trajectoryData, min_position = shifting_data(selecting_first_col(read_csv_file(trajectoryFile)))
-
-    # move_to_pos(mouduleTMCM_1276,0.1)
-    # print (min(trajectoryData))
     start = time.time()
-    # curentPostion = trajectoryData[0]
-    mouduleTMCM_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
-    # print("curentPostion",curentPostion)
-    for item in trajectoryData:
+    moudule_tmcm_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
+    for item in trajectory_data:
         start = time.time()
-        # move_difference = round(item - curentPostion, 6)
-        # print('current posistion {0} moving by {1} mm'.format(curentPostion, move_difference))
-        # move_by_unit(mouduleTMCM_1276, move_difference)
-        # curentPostion = round(move_difference + curentPostion,6)
-        move_to_unit(mouduleTMCM_1276, item)
-        # print("actual The position is:", mouduleTMCM_1276.getActualPosition())
+        move_to_unit(moudule_tmcm_1276, item)
         time_diff = time.time() - start
-        if (time_diff) < 0.02:
+        if time_diff < 0.02:
             time.sleep(.02 - time_diff)
 
-    move_back_zoro(mouduleTMCM_1276)
-    myInterface.close()
+    move_back_zoro(moudule_tmcm_1276)
+    my_interface.close()
 
 
 if __name__ == "__main__":
-    main()
+    arguments = parse_arguments()
+    main(arguments)
