@@ -17,8 +17,8 @@ from PyTrinamic.modules.TMCM_1276 import TMCM_1276
 
 
 def read_csv_file(filename="trajectory.csv"):
-    with open("trajectory.csv") as trajFile:
-        reader = csv.reader(trajFile, delimiter='\t')
+    with open("trajectory.csv") as trajectory_file:
+        reader = csv.reader(trajectory_file, delimiter='\t')
         next(reader)  # skip header
         data = [r for r in reader]
     return data
