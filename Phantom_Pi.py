@@ -46,22 +46,28 @@ def unit_to_pulse(mm, lead=4.9609375e-05):
     return round(mm / lead)
 
 
-def move_back_zoro(mouduleTMCM_1276, speed=150000):
+def move_back_zoro(moudule_tmcm_1276, speed=150000):
+    print("current position is:", moudule_tmcm_1276.getActualPosition())
     print("Moving back to 0")
-    mouduleTMCM_1276.moveTo(0, speed)
+    moudule_tmcm_1276.moveTo(0, speed)
     # Wait until position 0 is reached
-    while not (mouduleTMCM_1276.positionReached()):
+    while not (moudule_tmcm_1276.positionReached()):
         pass
-
     print("Reached Position 0")
 
 
-def move_by_unit(mouduleTMCM_1276, position, unit='SI'):
-    # add in or si postioning
-    # print(position, move_by_mm(position))
-    mouduleTMCM_1276.moveBy(unit_to_pulse(position))
-    mouduleTMCM_1276.getAxisParameter(mouduleTMCM_1276.APs.ActualPosition)
-    while not (mouduleTMCM_1276.positionReached()):
+def move_by_unit(moudule_tmcm_1276, position: float, unit='SI') -> bool:
+    """
+    This function move stepper motor by desired Unit(SI "mm" or Imperial "inch")
+    :param moudule_tmcm_1276:
+    :param position:
+    :param unit:
+    :return:
+    """
+    #print(unit_to_pulse(position))
+    moudule_tmcm_1276.moveBy(unit_to_pulse(position))
+    moudule_tmcm_1276.getAxisParameter(moudule_tmcm_1276.APs.ActualPosition)
+    while not (moudule_tmcm_1276.positionReached()):
         pass
 
 
@@ -88,6 +94,48 @@ def parse_arguments():
     return output[args.connection]
 
 
+def reference_search(moudule_tmcm_1276, mode=2):
+    # TODO: set left and right position and define zero in regrading the mode
+    moudule_tmcm_1276.setAxisParameter(moudule_tmcm_1276.APs.ReferenceSearchMode, mode)
+    # moudule_tmcm_1276.setAxisParameter(moudule_tmcm_1276.APs.Ref)
+    automatic_stop_toggle(moudule_tmcm_1276, 1)
+    # TODO: find left end
+    end_stop_status(moudule_tmcm_1276)
+    #while moudule_tmcm_1276.getAxisParameter(moudule_tmcm_1276.APs.LeftEndstop):
+    #    moudule_tmcm_1276.moveBy(51700)
+
+    # TODO: find right end
+    end_stop_status(moudule_tmcm_1276)
+    while moudule_tmcm_1276.getAxisParameter(moudule_tmcm_1276.APs.RightEndstop):
+        #end_stop_status(moudule_tmcm_1276)
+        moudule_tmcm_1276.moveBy(-51700)
+    moudule_tmcm_1276.stop()
+    moudule_tmcm_1276.setActualPosition(0)
+    while not (moudule_tmcm_1276.getActualPosition()==0):
+        print(moudule_tmcm_1276.getActualPosition())
+        moudule_tmcm_1276.setActualPosition(0)
+        pass
+    #moudule_tmcm_1276.setAxisParameter(moudule_tmcm_1276.APs.AutomaticRightStop, 0)
+    #moudule_tmcm_1276.moveBy(100)
+    #moudule_tmcm_1276.setActualPosition(0)
+        # moudule_tmcm_1276.moveBy()
+
+
+def automatic_stop_toggle(moudule_tmcm_1276, state):
+    moudule_tmcm_1276.setAxisParameter(moudule_tmcm_1276.APs.AutomaticRightStop, state)
+    moudule_tmcm_1276.setAxisParameter(moudule_tmcm_1276.APs.AutomaticLeftStop, state)
+
+
+def end_stop_status(moudule_tmcm_1276):
+    print("R:", moudule_tmcm_1276.getAxisParameter(moudule_tmcm_1276.APs.RightEndstop), "L:",
+          moudule_tmcm_1276.getAxisParameter(moudule_tmcm_1276.APs.LeftEndstop))
+
+
+def soft_stop_toggle(moudule_tmcm_1276, toggle=True) -> bool:
+    moudule_tmcm_1276.setAxisParameter(moudule_tmcm_1276.APs.softstop, int(toggle))
+    return moudule_tmcm_1276.getAxisParameter(moudule_tmcm_1276.APs.softstop)
+
+
 def main(*args):
     PyTrinamic.showInfo()
     print(args[0])
@@ -105,16 +153,37 @@ def main(*args):
     moudule_tmcm_1276.setMaxAcceleration(max_acceleration)
     moudule_tmcm_1276.setMaxVelocity(max_speed)
     moudule_tmcm_1276.setAxisParameter(moudule_tmcm_1276.APs.CurrentStepping, stepping)
+    moudule_tmcm_1276.setAxisParameter(moudule_tmcm_1276.APs.AutomaticRightStop, 1)
+    moudule_tmcm_1276.setAxisParameter(moudule_tmcm_1276.APs.AutomaticLeftStop, 1)
     print('max speed is:', moudule_tmcm_1276.getMaxVelocity())
     print("Start position is:", moudule_tmcm_1276.getActualPosition())
-    moudule_tmcm_1276.setActualPosition(0)
-    move_back_zoro(moudule_tmcm_1276)
+    move_by_unit(moudule_tmcm_1276, 10)
 
+    # moudule_tmcm_1276.setActualPosition(0)
+    # *********************
+    print(moudule_tmcm_1276.connection.printInfo())
+    print(soft_stop_toggle(moudule_tmcm_1276))
+    reference_search(moudule_tmcm_1276, 2)
+    end_stop_status(moudule_tmcm_1276)
+    print("current position is:", moudule_tmcm_1276.getActualPosition())
+
+    temp = input("w8")
+    print(temp)
+    # **********************
+    print("current position is:", moudule_tmcm_1276.getActualPosition())
+    end_stop_status(moudule_tmcm_1276)
+    print("current position is:", moudule_tmcm_1276.getAxisParameter(196))
+    move_back_zoro(moudule_tmcm_1276)
+    temp = input("w8")
+
+
+    print(temp)
     trajectory_file = "trajectory.csv"
     trajectory_data, min_position = shifting_data(selecting_column(read_csv_file(trajectory_file), column_number=0))
 
     start = time.time()
     moudule_tmcm_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
+    print("trajectory is loading")
     for item in trajectory_data:
         start = time.time()
         move_to_unit(moudule_tmcm_1276, item)
