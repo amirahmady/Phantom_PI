@@ -161,15 +161,17 @@ def test(module_tmcm_1276, mode=2, state = True):
     print("ap 196 value:", module_tmcm_1276.getAxisParameter(196))
     return True
 
-def automatic_stop_toggle(module_tmcm_1276: object, state: bool) -> bool:
+def automatic_stop_toggle(module_tmcm_1276, state: bool) -> bool:
     """
     :param module_tmcm_1276:
     :param state: bool True is on, False is off
     :return:
     """
+    module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.ReferenceSearchMode, 2)
+    print(module_tmcm_1276.getAxisParameter(193))
     try:
-        module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticRightStop, int(not state))
         module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticLeftStop, int(not state))
+        module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticRightStop, int(not state))
     except:
         return False
     else:
@@ -198,12 +200,12 @@ def main(*args):
     stepping = 256
     lead = lead_per_pulse(256, 0.10, 'in')
 
-    module_tmcm_1276.setMaxAcceleration(max_acceleration)
-    module_tmcm_1276.setMaxVelocity(max_speed)
-    module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.CurrentStepping, stepping)
+    motor_init(max_acceleration, max_speed, module_tmcm_1276, stepping)
+    #automatic_stop_toggle(module_tmcm_1276, ‌)
+
     init_move_mm(module_tmcm_1276)
     #test(module_tmcm_1276, mode=1, state=True)
-    #automatic_stop_toggle(module_tmcm_1276, True)
+
     end_stop_status(module_tmcm_1276)
     #test(module_tmcm_1276,2,True)
     soft_stop_toggle(module_tmcm_1276)
@@ -244,6 +246,12 @@ def main(*args):
 
     move_back_zoro(module_tmcm_1276)
     my_interface.close()
+
+
+def motor_init(max_acceleration, max_speed, module_tmcm_1276, stepping):
+    module_tmcm_1276.setMaxAcceleration(max_acceleration)
+    module_tmcm_1276.setMaxVelocity(max_speed)
+    module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.CurrentStepping, stepping)
 
 
 def init_move_mm(module_tmcm_1276):
