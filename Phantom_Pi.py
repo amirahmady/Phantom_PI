@@ -96,30 +96,42 @@ def parse_arguments():
 
 def reference_search(module_tmcm_1276, mode=2):
     print("Doing reference search by mode {0}".format(mode))
+
     # TODO: set left and right position and define zero in regrading the mode
     module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.ReferenceSearchMode, mode)
     print("ap 196 value:", module_tmcm_1276.getAxisParameter(196))
     automatic_stop_toggle(module_tmcm_1276, False)
-    # TODO: find left end
+
+        # TODO: find right end
     end_stop_status(module_tmcm_1276)
-    while module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.LeftEndstop):
-        module_tmcm_1276.moveBy(51700)
-    left_end_position = module_tmcm_1276.getActualPosition()
-    print("left switch found:", left_end_position)
-    # TODO: find right end
-    end_stop_status(module_tmcm_1276)
+    automatic_stop_toggle(module_tmcm_1276, True)
+    #automatic_stop_toggle(module_tmcm_1276, False)
     while module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.RightEndstop):
         # end_stop_status(module_tmcm_1276)
         module_tmcm_1276.moveBy(-51700)
     module_tmcm_1276.stop()
     right_end_position = module_tmcm_1276.getActualPosition()
-    module_tmcm_1276.setActualPosition(0)
-    while not (module_tmcm_1276.getActualPosition() == 0):
+    print("right switch found:", right_end_position)
+    virtual_zero= 4294967296 + int(unit_to_pulse(-5))
+    print('0: ', virtual_zero)
+    module_tmcm_1276.setActualPosition(virtual_zero)
+    while not (module_tmcm_1276.getActualPosition() == virtual_zero):
         # print(module_tmcm_1276.getActualPosition())
-        module_tmcm_1276.setActualPosition(0)
+        module_tmcm_1276.setActualPosition(virtual_zero)
         pass
+    automatic_stop_toggle(module_tmcm_1276, False)
+    move_back_zoro(module_tmcm_1276)
     print("right switch found:", right_end_position)
     print("right end set as starting piont", module_tmcm_1276.getActualPosition())
+
+    # TODO: find left end
+
+    end_stop_status(module_tmcm_1276)
+    while module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.LeftEndstop):
+        module_tmcm_1276.moveBy(51700)
+    left_end_position = module_tmcm_1276.getActualPosition()
+    print("left switch found:", left_end_position)
+
     print("ap 196 value:", module_tmcm_1276.getAxisParameter(196))
 
     # module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticRightStop, 0)
@@ -167,7 +179,8 @@ def automatic_stop_toggle(module_tmcm_1276, state: bool) -> bool:
     :param state: bool True is on, False is off
     :return:
     """
-    module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.ReferenceSearchMode, 2)
+    #module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.ReferenceSearchMode, 2)
+    # TODO: It has know bug when set AP to 1 and it is not on stop switch start to find L switch. find a way to fix it.
     print(module_tmcm_1276.getAxisParameter(193))
     try:
         module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticLeftStop, int(not state))
@@ -194,7 +207,7 @@ def main(*args):
     my_interface = connection_manager.connect()
     module_tmcm_1276 = TMCM_1276(my_interface)
 
-    max_speed = 12800 * 3
+    max_speed = 12800 * 3* 2
     max_acceleration = max_speed * 2
     default_motor = 0
     stepping = 256
@@ -203,28 +216,28 @@ def main(*args):
     motor_init(max_acceleration, max_speed, module_tmcm_1276, stepping)
     #automatic_stop_toggle(module_tmcm_1276, ‌)
 
-    init_move_mm(module_tmcm_1276)
+    #init_move_mm(module_tmcm_1276)
     #test(module_tmcm_1276, mode=1, state=True)
 
     end_stop_status(module_tmcm_1276)
     #test(module_tmcm_1276,2,True)
     soft_stop_toggle(module_tmcm_1276)
-    module_tmcm_1276.connection.printInfo()
+    
 
     print('max speed is:', module_tmcm_1276.getMaxVelocity())
-    print("Start position is:", module_tmcm_1276.getActualPosition())
+    print("Current position is:", module_tmcm_1276.getActualPosition())
     init_move_mm(module_tmcm_1276)
 
     # module_tmcm_1276.setActualPosition(0)
     # *********************
     reference_search(module_tmcm_1276, 2)
     end_stop_status(module_tmcm_1276)
-    print("current position is:", module_tmcm_1276.getActualPosition())
+    print("Current position is:", module_tmcm_1276.getActualPosition())
 
     temp = input("w8")
     print(temp)
     # **********************
-    print("current position is:", module_tmcm_1276.getActualPosition())
+    print("Current position is:", module_tmcm_1276.getActualPosition())
     end_stop_status(module_tmcm_1276)
     print("current position is:", module_tmcm_1276.getAxisParameter(196))
     move_back_zoro(module_tmcm_1276)
@@ -252,10 +265,12 @@ def motor_init(max_acceleration, max_speed, module_tmcm_1276, stepping):
     module_tmcm_1276.setMaxAcceleration(max_acceleration)
     module_tmcm_1276.setMaxVelocity(max_speed)
     module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.CurrentStepping, stepping)
+    module_tmcm_1276.connection.printInfo()
 
 
 def init_move_mm(module_tmcm_1276):
     init_move = int(input("desire init move by : "))
+    print("pulse",unit_to_pulse(init_move))
     automatic_stop_toggle(module_tmcm_1276, False)
     move_by_unit(module_tmcm_1276, init_move)
     print("done")
