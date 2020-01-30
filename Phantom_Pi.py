@@ -15,6 +15,8 @@ import PyTrinamic
 from PyTrinamic.connections.ConnectionManager import ConnectionManager
 from PyTrinamic.modules.TMCM_1276 import TMCM_1276
 
+step_range = 2147483647 * 2
+
 
 def read_csv_file(filename="trajectory.csv"):
     with open("trajectory.csv") as trajectory_file:
@@ -46,7 +48,7 @@ def unit_to_pulse(mm, lead=4.9609375e-05):
     return round(mm / lead)
 
 
-def move_back_zoro(module_tmcm_1276, speed=150000):
+def move_back_zoro(module_tmcm_1276, speed=75000):
     print("current position is:", module_tmcm_1276.getActualPosition())
     print("Moving back to 0")
     module_tmcm_1276.moveTo(0, speed)
@@ -70,6 +72,20 @@ def move_by_unit(module_tmcm_1276, position: float, unit='SI') -> bool:
     while not (module_tmcm_1276.positionReached()):
         pass
 
+def move_by_pp(module_tmcm_1276, position: int) -> bool:
+    """
+    This function move stepper motor by desired Unit(pp)
+    :param module_tmcm_1276:
+    :param position:
+    :param unit:
+    :return:
+    """
+    # print(unit_to_pulse(position))
+    module_tmcm_1276.moveBy(position)
+    module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.ActualPosition)
+    while not (module_tmcm_1276.positionReached()):
+        pass
+    return True
 
 def move_to_unit(moduleTMCM_1276, position, unit='SI'):
     # add in or si postioning
@@ -85,54 +101,70 @@ def parse_arguments():
     output = {"pcan": "pcan_tmcl",
               "p": "pcan_tmcl",
               "socketcan": "socketcan_tmcl",
-              "s": "socketcan_tmcl"
+              "s": "socketcan_tmcl",
               }
     parser.add_argument('-c', '--connection', dest='connection', choices=['socketcan', 'pcan'],
                         help="use socketcan or pcan as connection", required=True, type=str)
+    parser.add_argument('-i','--init',dest='init',type=int,help='init movement')                    
     parser.add_argument('remaining_args', nargs=argparse.REMAINDER)
     args = parser.parse_args()
-    return output[args.connection]
+    args.connection = output[args.connection]
+    return args
 
 
-def reference_search(module_tmcm_1276, mode=2):
-    print("Doing reference search by mode {0}".format(mode))
+def reference_search(module_tmcm_1276, mode=3):
+    print("Doing reference search by mode {0} ...".format(mode))
+    print(module_tmcm_1276.getAxisParameter(196),module_tmcm_1276.getAxisParameter(197))
+    zero_telorance= int(unit_to_pulse(-5))
 
     # TODO: set left and right position and define zero in regrading the mode
-    module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.ReferenceSearchMode, mode)
-    print("ap 196 value:", module_tmcm_1276.getAxisParameter(196))
-    automatic_stop_toggle(module_tmcm_1276, False)
-
-        # TODO: find right end
+    # TODO: find right end
+    
     end_stop_status(module_tmcm_1276)
     automatic_stop_toggle(module_tmcm_1276, True)
-    #automatic_stop_toggle(module_tmcm_1276, False)
     while module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.RightEndstop):
-        # end_stop_status(module_tmcm_1276)
         module_tmcm_1276.moveBy(-51700)
     module_tmcm_1276.stop()
     right_end_position = module_tmcm_1276.getActualPosition()
-    print("right switch found:", right_end_position)
-    virtual_zero= 4294967296 + int(unit_to_pulse(-5))
+    virtual_zero = step_range + zero_telorance if right_end_position > 2147483647 else step_range - zero_telorance #right point what if it is small positive?
     print('0: ', virtual_zero)
-    module_tmcm_1276.setActualPosition(virtual_zero)
-    while not (module_tmcm_1276.getActualPosition() == virtual_zero):
-        # print(module_tmcm_1276.getActualPosition())
-        module_tmcm_1276.setActualPosition(virtual_zero)
-        pass
+    set_positon(module_tmcm_1276, virtual_zero)
     automatic_stop_toggle(module_tmcm_1276, False)
     move_back_zoro(module_tmcm_1276)
     print("right switch found:", right_end_position)
-    print("right end set as starting piont", module_tmcm_1276.getActualPosition())
+    print("right end set as:", module_tmcm_1276.getActualPosition())
 
     # TODO: find left end
 
     end_stop_status(module_tmcm_1276)
+    automatic_stop_toggle(module_tmcm_1276, True)
     while module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.LeftEndstop):
         module_tmcm_1276.moveBy(51700)
-    left_end_position = module_tmcm_1276.getActualPosition()
+    module_tmcm_1276.stop()
+    while not (module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.ActualVelocity) == 0):
+        pass
+    left_end_position = module_tmcm_1276.getActualPosition()+ zero_telorance 
+    automatic_stop_toggle(module_tmcm_1276, False)
+    move_by_pp(module_tmcm_1276,zero_telorance)
     print("left switch found:", left_end_position)
+    mid_piont =int(left_end_position/2)
 
-    print("ap 196 value:", module_tmcm_1276.getAxisParameter(196))
+    set_positon(module_tmcm_1276, mid_piont)
+    print("ap is: ", module_tmcm_1276.getActualPosition())
+    move_back_zoro(module_tmcm_1276)
+
+
+def set_positon(module_tmcm_1276, position:int):
+
+    module_tmcm_1276.setActualPosition(position)
+    while not (module_tmcm_1276.getActualPosition() == position):
+        # print(module_tmcm_1276.getActualPosition())
+        module_tmcm_1276.setActualPosition(position)
+        pass
+    print("Position set to: ", module_tmcm_1276.getActualPosition())
+
+    #module_tmcm_1276.setAxisParameter(196,left_end_position)
+    #print("ap 196 value:", module_tmcm_1276.getAxisParameter(196))
 
     # module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticRightStop, 0)
     # module_tmcm_1276.moveBy(100)
@@ -203,11 +235,12 @@ def soft_stop_toggle(module_tmcm_1276, toggle=True) -> bool:
 
 def main(*args):
     PyTrinamic.showInfo()
-    connection_manager = ConnectionManager(argList=['--interface', args[0]])
+    print(args[0].connection)
+    connection_manager = ConnectionManager(argList=['--interface', args[0].connection])
     my_interface = connection_manager.connect()
     module_tmcm_1276 = TMCM_1276(my_interface)
 
-    max_speed = 12800 * 3* 2
+    max_speed = 12800 * 3 * 2
     max_acceleration = max_speed * 2
     default_motor = 0
     stepping = 256
@@ -219,14 +252,11 @@ def main(*args):
     #init_move_mm(module_tmcm_1276)
     #test(module_tmcm_1276, mode=1, state=True)
 
-    end_stop_status(module_tmcm_1276)
-    #test(module_tmcm_1276,2,True)
-    soft_stop_toggle(module_tmcm_1276)
+
     
 
-    print('max speed is:', module_tmcm_1276.getMaxVelocity())
-    print("Current position is:", module_tmcm_1276.getActualPosition())
-    init_move_mm(module_tmcm_1276)
+
+    if args[0].init : init_move_mm(module_tmcm_1276)
 
     # module_tmcm_1276.setActualPosition(0)
     # *********************
@@ -266,15 +296,21 @@ def motor_init(max_acceleration, max_speed, module_tmcm_1276, stepping):
     module_tmcm_1276.setMaxVelocity(max_speed)
     module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.CurrentStepping, stepping)
     module_tmcm_1276.connection.printInfo()
+    end_stop_status(module_tmcm_1276)
+    #test(module_tmcm_1276,2,True)
+    soft_stop_toggle(module_tmcm_1276)
+    print('max speed is:', module_tmcm_1276.getMaxVelocity())
+    print("Current position is:", module_tmcm_1276.getActualPosition())
 
 
-def init_move_mm(module_tmcm_1276):
+def init_move_mm(module_tmcm_1276,move=None):
     init_move = int(input("desire init move by : "))
     print("pulse",unit_to_pulse(init_move))
     automatic_stop_toggle(module_tmcm_1276, False)
     move_by_unit(module_tmcm_1276, init_move)
     print("done")
 
+#def set_zero_position(0)
 
 if __name__ == "__main__":
     arguments = parse_arguments()
