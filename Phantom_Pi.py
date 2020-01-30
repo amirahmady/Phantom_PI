@@ -147,9 +147,11 @@ def reference_search(module_tmcm_1276, mode=3):
     automatic_stop_toggle(module_tmcm_1276, False)
     move_by_pp(module_tmcm_1276,zero_telorance)
     print("left switch found:", left_end_position)
-    mid_piont =int(left_end_position/2)
-
-    set_positon(module_tmcm_1276, mid_piont)
+    if mode == 3 :
+        position_zero = int(left_end_position/2)
+    else:
+        position_zero = right_end_position
+    set_positon(module_tmcm_1276, position_zero)
     print("ap is: ", module_tmcm_1276.getActualPosition())
     move_back_zoro(module_tmcm_1276)
 
@@ -235,7 +237,6 @@ def soft_stop_toggle(module_tmcm_1276, toggle=True) -> bool:
 
 def main(*args):
     PyTrinamic.showInfo()
-    print(args[0].connection)
     connection_manager = ConnectionManager(argList=['--interface', args[0].connection])
     my_interface = connection_manager.connect()
     module_tmcm_1276 = TMCM_1276(my_interface)
@@ -256,7 +257,7 @@ def main(*args):
     
 
 
-    if args[0].init : init_move_mm(module_tmcm_1276)
+    if args[0].init : init_move_mm(module_tmcm_1276,args[0].init)
 
     # module_tmcm_1276.setActualPosition(0)
     # *********************
@@ -292,6 +293,7 @@ def main(*args):
 
 
 def motor_init(max_acceleration, max_speed, module_tmcm_1276, stepping):
+    print("Starting position is:", module_tmcm_1276.getActualPosition())
     module_tmcm_1276.setMaxAcceleration(max_acceleration)
     module_tmcm_1276.setMaxVelocity(max_speed)
     module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.CurrentStepping, stepping)
@@ -304,7 +306,7 @@ def motor_init(max_acceleration, max_speed, module_tmcm_1276, stepping):
 
 
 def init_move_mm(module_tmcm_1276,move=None):
-    init_move = int(input("desire init move by : "))
+    init_move = move if move else int(input("desire init move by : "))
     print("pulse",unit_to_pulse(init_move))
     automatic_stop_toggle(module_tmcm_1276, False)
     move_by_unit(module_tmcm_1276, init_move)
