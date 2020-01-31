@@ -1,0 +1,29 @@
+mfile:
+/media/sawant/Maida/MotionData4DPhantomManual/make_trajectories/sinusoidal.m
+dT_mp=25.e-3;
+time=0:dT_mp:5*60; 
+f=1/10; 
+
+
+001_in_sync.txt :
+amp_si=15;
+amp_ap=7.5;
+ramp_duration=20; 
+
+
+002_out_sync.txt
+
+amp_si=15;
+amp_ap=7.5;
+ramp_duration=20; 
+phase=13; 
+
+
+
+003_in_sync.tt & 004_out_sync
+amp_si=15;
+amp_ap=5;
+ramp_duration=20; 
+%out-of-sync sin
+phase=13; 
+

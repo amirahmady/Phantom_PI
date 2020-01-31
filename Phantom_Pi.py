@@ -105,7 +105,8 @@ def parse_arguments():
               }
     parser.add_argument('-c', '--connection', dest='connection', choices=['socketcan', 'pcan'],
                         help="use socketcan or pcan as connection", required=True, type=str)
-    parser.add_argument('-i','--init',dest='init',type=int,help='init movement')                    
+    parser.add_argument('-i','--init',dest='init',type=int,help='init movement')
+    parser.add_argument('-r','--RFS',dest='RFS_mode',type=int,help="do refrence search")                    
     parser.add_argument('remaining_args', nargs=argparse.REMAINDER)
     args = parser.parse_args()
     args.connection = output[args.connection]
@@ -113,6 +114,7 @@ def parse_arguments():
 
 
 def reference_search(module_tmcm_1276, mode=3):
+    zero_speed=60000
     print("Doing reference search by mode {0} ...".format(mode))
     print(module_tmcm_1276.getAxisParameter(196),module_tmcm_1276.getAxisParameter(197))
     zero_telorance= int(unit_to_pulse(-5))
@@ -120,8 +122,12 @@ def reference_search(module_tmcm_1276, mode=3):
     # TODO: set left and right position and define zero in regrading the mode
     # TODO: find right end
     
-    end_stop_status(module_tmcm_1276)
-    automatic_stop_toggle(module_tmcm_1276, True)
+    
+    """     if end_stop_status(module_tmcm_1276).values():
+        set_automatic_stop(module_tmcm_1276, False)
+    else: 
+        set... """
+    set_automatic_stop(module_tmcm_1276, all(end_stop_status(module_tmcm_1276).values()))
     while module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.RightEndstop):
         module_tmcm_1276.moveBy(-51700)
     module_tmcm_1276.stop()
@@ -129,26 +135,26 @@ def reference_search(module_tmcm_1276, mode=3):
     virtual_zero = step_range + zero_telorance if right_end_position > 2147483647 else step_range - zero_telorance #right point what if it is small positive?
     print('0: ', virtual_zero)
     set_positon(module_tmcm_1276, virtual_zero)
-    automatic_stop_toggle(module_tmcm_1276, False)
-    move_back_zoro(module_tmcm_1276)
+    set_automatic_stop(module_tmcm_1276, False)
+    #move_back_zoro(module_tmcm_1276,zero_speed)
     print("right switch found:", right_end_position)
-    print("right end set as:", module_tmcm_1276.getActualPosition())
+    #print("right end set as:", module_tmcm_1276.getActualPosition())
 
     # TODO: find left end
 
-    end_stop_status(module_tmcm_1276)
-    automatic_stop_toggle(module_tmcm_1276, True)
+
+    set_automatic_stop(module_tmcm_1276, all(end_stop_status(module_tmcm_1276).values()))
     while module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.LeftEndstop):
         module_tmcm_1276.moveBy(51700)
     module_tmcm_1276.stop()
     while not (module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.ActualVelocity) == 0):
         pass
     left_end_position = module_tmcm_1276.getActualPosition()+ zero_telorance 
-    automatic_stop_toggle(module_tmcm_1276, False)
-    move_by_pp(module_tmcm_1276,zero_telorance)
+    set_automatic_stop(module_tmcm_1276, False)
+    #move_by_pp(module_tmcm_1276,zero_telorance)
     print("left switch found:", left_end_position)
     if mode == 3 :
-        position_zero = int(left_end_position/2)
+        position_zero = int(left_end_position/2)-zero_telorance
     else:
         position_zero = right_end_position
     set_positon(module_tmcm_1276, position_zero)
@@ -180,7 +186,7 @@ def test(module_tmcm_1276, mode=2, state = True):
     #     def move(self, moveType, motor, position, moduleID=None):
     #         return self.send(TMCL_Command.MVP, moveType, motor, position, moduleID)
     soft_stop_toggle(module_tmcm_1276, False)
-    automatic_stop_toggle(module_tmcm_1276,True)
+    set_automatic_stop(module_tmcm_1276,True)
     print("RSF MODE")
     module_tmcm_1276.connection.send(13, 0, 0, 0)
     #RFS START, 0				//start reference search
@@ -207,7 +213,7 @@ def test(module_tmcm_1276, mode=2, state = True):
     print("ap 196 value:", module_tmcm_1276.getAxisParameter(196))
     return True
 
-def automatic_stop_toggle(module_tmcm_1276, state: bool) -> bool:
+def set_automatic_stop(module_tmcm_1276, state: bool) -> bool:
     """
     :param module_tmcm_1276:
     :param state: bool True is on, False is off
@@ -215,19 +221,22 @@ def automatic_stop_toggle(module_tmcm_1276, state: bool) -> bool:
     """
     #module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.ReferenceSearchMode, 2)
     # TODO: It has know bug when set AP to 1 and it is not on stop switch start to find L switch. find a way to fix it.
-    print(module_tmcm_1276.getAxisParameter(193))
     try:
         module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticLeftStop, int(not state))
         module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticRightStop, int(not state))
     except:
         return False
     else:
-        return True
+        return state
 
 
-def end_stop_status(module_tmcm_1276):
-    print("R:", module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.RightEndstop), "L:",
-          module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.LeftEndstop))
+def end_stop_status(module_tmcm_1276)-> dict:
+    right=module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.RightEndstop)
+    left=module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.LeftEndstop)
+    out={'R': not bool(right), 'L':
+          not bool(left)}
+    print(out)
+    return out
 
 
 def soft_stop_toggle(module_tmcm_1276, toggle=True) -> bool:
@@ -240,7 +249,7 @@ def main(*args):
     connection_manager = ConnectionManager(argList=['--interface', args[0].connection])
     my_interface = connection_manager.connect()
     module_tmcm_1276 = TMCM_1276(my_interface)
-
+    print("Warning if motor is not around postion zero it will go there automaticly")
     max_speed = 12800 * 3 * 2
     max_acceleration = max_speed * 2
     default_motor = 0
@@ -248,42 +257,31 @@ def main(*args):
     lead = lead_per_pulse(256, 0.10, 'in')
 
     motor_init(max_acceleration, max_speed, module_tmcm_1276, stepping)
-    #automatic_stop_toggle(module_tmcm_1276, ‌)
 
-    #init_move_mm(module_tmcm_1276)
-    #test(module_tmcm_1276, mode=1, state=True)
-
-
-    
-
-
-    if args[0].init : init_move_mm(module_tmcm_1276,args[0].init)
-
-    # module_tmcm_1276.setActualPosition(0)
-    # *********************
-    reference_search(module_tmcm_1276, 2)
     end_stop_status(module_tmcm_1276)
-    print("Current position is:", module_tmcm_1276.getActualPosition())
 
-    temp = input("w8")
-    print(temp)
+    if args[0].init: init_move_mm(module_tmcm_1276,args[0].init)
+    if args[0].RFS_mode: reference_search(module_tmcm_1276,args[0].RFS_mode) 
+
+    end_stop_status(module_tmcm_1276)
     # **********************
     print("Current position is:", module_tmcm_1276.getActualPosition())
     end_stop_status(module_tmcm_1276)
     print("current position is:", module_tmcm_1276.getAxisParameter(196))
     move_back_zoro(module_tmcm_1276)
-    temp = input("w8")
-
-    print(temp)
+    set_automatic_stop(module_tmcm_1276,True)
+    temp = input("w8 for staring command")
     trajectory_file = "trajectory.csv"
     trajectory_data, min_position = shifting_data(selecting_column(read_csv_file(trajectory_file), column_number=0))
-
+    
     start = time.time()
-    module_tmcm_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
+    #module_tmcm_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
+
     print("trajectory is loading")
     for item in trajectory_data:
         start = time.time()
-        move_to_unit(module_tmcm_1276, item)
+        print(item)
+        move_to_unit(module_tmcm_1276, item*10)
         time_diff = time.time() - start
         if time_diff < 0.02:
             time.sleep(.02 - time_diff)
@@ -308,7 +306,7 @@ def motor_init(max_acceleration, max_speed, module_tmcm_1276, stepping):
 def init_move_mm(module_tmcm_1276,move=None):
     init_move = move if move else int(input("desire init move by : "))
     print("pulse",unit_to_pulse(init_move))
-    automatic_stop_toggle(module_tmcm_1276, False)
+    set_automatic_stop(module_tmcm_1276, False)
     move_by_unit(module_tmcm_1276, init_move)
     print("done")
 
