@@ -127,14 +127,16 @@ def reference_search(module_tmcm_1276, mode=3):
         set_automatic_stop(module_tmcm_1276, False)
     else: 
         set... """
+    if not module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.RightEndstop):
+        init_move_mm(module_tmcm_1276,15)    
     set_automatic_stop(module_tmcm_1276, all(end_stop_status(module_tmcm_1276).values()))
     while module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.RightEndstop):
         module_tmcm_1276.moveBy(-51700)
     module_tmcm_1276.stop()
     right_end_position = module_tmcm_1276.getActualPosition()
-    virtual_zero = step_range + zero_telorance if right_end_position > 2147483647 else step_range - zero_telorance #right point what if it is small positive?
+    virtual_zero = step_range + zero_telorance if right_end_position > 2147483647 else right_end_position - zero_telorance #right point what if it is small positive?
     print('0: ', virtual_zero)
-    set_positon(module_tmcm_1276, virtual_zero)
+    set_position(module_tmcm_1276, virtual_zero)
     set_automatic_stop(module_tmcm_1276, False)
     #move_back_zoro(module_tmcm_1276,zero_speed)
     print("right switch found:", right_end_position)
@@ -157,16 +159,16 @@ def reference_search(module_tmcm_1276, mode=3):
         position_zero = int(left_end_position/2)-zero_telorance
     else:
         position_zero = right_end_position
-    set_positon(module_tmcm_1276, position_zero)
+    set_position(module_tmcm_1276, position_zero)
     print("ap is: ", module_tmcm_1276.getActualPosition())
     move_back_zoro(module_tmcm_1276)
 
 
-def set_positon(module_tmcm_1276, position:int):
+def set_position(module_tmcm_1276, position:int):
 
     module_tmcm_1276.setActualPosition(position)
     while not (module_tmcm_1276.getActualPosition() == position):
-        # print(module_tmcm_1276.getActualPosition())
+        print(module_tmcm_1276.getActualPosition())
         module_tmcm_1276.setActualPosition(position)
         pass
     print("Position set to: ", module_tmcm_1276.getActualPosition())
@@ -250,7 +252,7 @@ def main(*args):
     my_interface = connection_manager.connect()
     module_tmcm_1276 = TMCM_1276(my_interface)
     print("Warning if motor is not around postion zero it will go there automaticly")
-    max_speed = 12800 * 3 * 2
+    max_speed = 12800 * 3 * 4
     max_acceleration = max_speed * 2
     default_motor = 0
     stepping = 256
@@ -274,10 +276,23 @@ def main(*args):
     trajectory_file = "trajectory.csv"
     trajectory_data, min_position = shifting_data(selecting_column(read_csv_file(trajectory_file), column_number=0))
     
-    start = time.time()
+    
     #module_tmcm_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
 
     print("trajectory is loading")
+    move= 25
+    move_by_unit(module_tmcm_1276, move)
+    while True:
+        move_by_unit(module_tmcm_1276, -move*2)
+        move_by_unit(module_tmcm_1276, move*2)
+
+    #run_trajectory(trajectory_data, module_tmcm_1276)
+
+    move_back_zoro(module_tmcm_1276)
+    my_interface.close()
+
+def run_trajectory(trajectory_data, module_tmcm_1276):
+    start = time.time()
     for item in trajectory_data:
         start = time.time()
         print(item)
@@ -286,21 +301,31 @@ def main(*args):
         if time_diff < 0.02:
             time.sleep(.02 - time_diff)
 
-    move_back_zoro(module_tmcm_1276)
-    my_interface.close()
-
 
 def motor_init(max_acceleration, max_speed, module_tmcm_1276, stepping):
     print("Starting position is:", module_tmcm_1276.getActualPosition())
     module_tmcm_1276.setMaxAcceleration(max_acceleration)
     module_tmcm_1276.setMaxVelocity(max_speed)
     module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.CurrentStepping, stepping)
+    module_tmcm_1276.setAxisParameter(21, 0)
     module_tmcm_1276.connection.printInfo()
     end_stop_status(module_tmcm_1276)
     #test(module_tmcm_1276,2,True)
     soft_stop_toggle(module_tmcm_1276)
     print('max speed is:', module_tmcm_1276.getMaxVelocity())
     print("Current position is:", module_tmcm_1276.getActualPosition())
+    names=['Start velocity (V START ) ',
+        'Acceleration A1 ',
+        'Velocity V1',
+        'Acceleration A2 ',
+        'Maximum positioning velocity (V MAX )',
+        'Deceleration D2',
+        'Deceleration D1',
+        'Stop velocity V STOP',
+        'Wait time WAIT']
+    aps=[19,15,16,5,4,17,18,20,21]
+    for name,item in zip(names,aps):
+        print(name,': ', module_tmcm_1276.getAxisParameter(item))
 
 
 def init_move_mm(module_tmcm_1276,move=None):
