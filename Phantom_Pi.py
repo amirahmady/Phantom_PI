@@ -48,7 +48,7 @@ def unit_to_pulse(mm, lead=4.9609375e-05):
     return round(mm / lead)
 
 
-def move_back_zoro(module_tmcm_1276, speed=75000):
+def move_back_zoro(module_tmcm_1276, speed=153600):
     print("current position is:", module_tmcm_1276.getActualPosition())
     print("Moving back to 0")
     module_tmcm_1276.moveTo(0, speed)
@@ -114,7 +114,8 @@ def parse_arguments():
 
 
 def reference_search(module_tmcm_1276, mode=3):
-    zero_speed=60000
+    rfs_speed=151700
+
     print("Doing reference search by mode {0} ...".format(mode))
     print(module_tmcm_1276.getAxisParameter(196),module_tmcm_1276.getAxisParameter(197))
     zero_telorance= int(unit_to_pulse(-5))
@@ -131,7 +132,7 @@ def reference_search(module_tmcm_1276, mode=3):
         init_move_mm(module_tmcm_1276,15)    
     set_automatic_stop(module_tmcm_1276, all(end_stop_status(module_tmcm_1276).values()))
     while module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.RightEndstop):
-        module_tmcm_1276.moveBy(-51700)
+        module_tmcm_1276.moveBy(-rfs_speed)
     module_tmcm_1276.stop()
     right_end_position = module_tmcm_1276.getActualPosition()
     virtual_zero = step_range + zero_telorance if right_end_position > 2147483647 else right_end_position - zero_telorance #right point what if it is small positive?
@@ -147,7 +148,7 @@ def reference_search(module_tmcm_1276, mode=3):
 
     set_automatic_stop(module_tmcm_1276, all(end_stop_status(module_tmcm_1276).values()))
     while module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.LeftEndstop):
-        module_tmcm_1276.moveBy(51700)
+        module_tmcm_1276.moveBy(rfs_speed)
     module_tmcm_1276.stop()
     while not (module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.ActualVelocity) == 0):
         pass
@@ -218,7 +219,7 @@ def test(module_tmcm_1276, mode=2, state = True):
 def set_automatic_stop(module_tmcm_1276, state: bool) -> bool:
     """
     :param module_tmcm_1276:
-    :param state: bool True is on, False is off
+    :param state: bool True is on, False is off , 1 is off 0 is on
     :return:
     """
     #module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.ReferenceSearchMode, 2)
@@ -227,10 +228,16 @@ def set_automatic_stop(module_tmcm_1276, state: bool) -> bool:
         module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticLeftStop, int(not state))
         module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticRightStop, int(not state))
     except:
+        print("some thing went wrong")
         return False
     else:
+        right=module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.AutomaticRightStop)
+        left=module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.AutomaticLeftStop)
+        out={'R': right, 'L':
+          left}
+        print("Auto Stop Mode", out)
         return state
-
+    
 
 def end_stop_status(module_tmcm_1276)-> dict:
     right=module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.RightEndstop)
@@ -280,11 +287,20 @@ def main(*args):
     #module_tmcm_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
 
     print("trajectory is loading")
-    move= 25
-    move_by_unit(module_tmcm_1276, move)
+    set_automatic_stop(module_tmcm_1276,True)
+    # while True:
+    #     end_stop_status(module_tmcm_1276)
     while True:
-        move_by_unit(module_tmcm_1276, -move*2)
-        move_by_unit(module_tmcm_1276, move*2)
+        module_tmcm_1276.rotate(100000)
+        time.sleep(2)
+        #module_tmcm_1276.stop()
+        module_tmcm_1276.rotate(-100000)
+        time.sleep(2)
+
+    #move= 25
+    #move_by_unit(module_tmcm_1276, move)
+        #move_by_unit(module_tmcm_1276, -move*2)
+        #move_by_unit(module_tmcm_1276, move*2)
 
     #run_trajectory(trajectory_data, module_tmcm_1276)
 
