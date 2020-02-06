@@ -15,7 +15,8 @@ import PyTrinamic
 from PyTrinamic.connections.ConnectionManager import ConnectionManager
 from PyTrinamic.modules.TMCM_1276 import TMCM_1276
 
-step_range = 2147483647 * 2
+mid_range=2147483647
+max_range = mid_range * 2
 
 
 def read_csv_file(filename="trajectory.csv"):
@@ -87,6 +88,21 @@ def move_by_pp(module_tmcm_1276, position: int) -> bool:
         pass
     return True
 
+def move_to_pp(module_tmcm_1276, position: int) -> bool:
+    """
+    This function move stepper motor by desired Unit(pp)
+    :param module_tmcm_1276:
+    :param position:
+    :param unit:
+    :return:
+    """
+    # print(unit_to_pulse(position))
+    module_tmcm_1276.moveTo(position)
+    module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.ActualPosition)
+    while not (module_tmcm_1276.positionReached()):
+        pass
+    return True
+
 def move_to_unit(moduleTMCM_1276, position, unit='SI'):
     # add in or si postioning
     # print(position, move_by_mm(position))
@@ -113,42 +129,88 @@ def parse_arguments():
     return args
 
 
-def reference_search(module_tmcm_1276, mode=3):
-    rfs_speed=151700
+def reference_search(module_tmcm_1276, mode=3,rfs_speed=200000,zero_telorance = int(unit_to_pulse(4))):
+    # TODO: set left and right position and define zero in regrading the mode
+    # TODO: find right end
+    #zero_telorance = int(unit_to_pulse(2))
+    def right_end_position()->int:
+        rep = 0
+        set_automatic_stop(module_tmcm_1276,False)
+        module_tmcm_1276.rotate(rfs_speed)
+        while module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.RightEndstop):
+            pass
+        module_tmcm_1276.stop()
+        rep = module_tmcm_1276.getActualPosition()
+        #set_automatic_stop(module_tmcm_1276,False)
+        move_by_pp(module_tmcm_1276,-zero_telorance)
+        return rep
+
+    def left_end_position()->int:
+        lep=0
+        set_automatic_stop(module_tmcm_1276,False)
+        module_tmcm_1276.rotate(-rfs_speed)
+        while module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.LeftEndstop):
+            pass
+        module_tmcm_1276.stop()
+        lep = module_tmcm_1276.getActualPosition()
+        #set_automatic_stop(module_tmcm_1276,False)
+        move_by_pp(module_tmcm_1276,zero_telorance)
+        return lep
+
+    def position_zero(rep=0,lep=0)->int:
+        print('Rep: ', rep, 'Lep: ', lep)
+        lep = -(max_range-lep) if lep > 2147483647 else lep
+        rep = -(max_range-rep) if rep > 2147483647 else rep
+        if mode == 3:
+            print('Rep: ', rep, 'Lep: ', lep)
+            value=int((rep+lep)/2)
+        else:
+            value = 0
+        return value
+
+    soft_stop_toggle(module_tmcm_1276,False)
+    end_sw_status= end_stop_sw_status(module_tmcm_1276)
+    #set_automatic_stop(module_tmcm_1276, all(end_stop_sw_status(module_tmcm_1276).values()))
+    if all(end_sw_status.values()): #all True
+        print("Something is wrong in wiring")
+        raise IOError
+    elif not any(end_sw_status.values()):
+        rep = right_end_position()
+        print(rep)
+        lep = left_end_position()
+        print(lep)
+        #TODO: find both side
+       
+    elif not end_sw_status['R']:
+        #TODO: find left side
+        pass
+    else:
+        #TODO: find right side
+        pass
+    
+    #set_position(module_tmcm_1276, position_zero(rep=rep,lep=lep))
+    #print("ap is: ", module_tmcm_1276.getActualPosition())
+    move_to_pp(module_tmcm_1276,position_zero(rep=rep,lep=lep))
+    time.sleep(10)
+    """ 
+    virtual_zero = step_range + zero_telorance if right_end_position > 2147483647 else right_end_position - zero_telorance #right point what if it is small positive?
+
 
     print("Doing reference search by mode {0} ...".format(mode))
     print(module_tmcm_1276.getAxisParameter(196),module_tmcm_1276.getAxisParameter(197))
-    zero_telorance= int(unit_to_pulse(-5))
+    zero_telorance= int(unit_to_pulse(2))
 
-    # TODO: set left and right position and define zero in regrading the mode
-    # TODO: find right end
+
     
-    
-    """     if end_stop_status(module_tmcm_1276).values():
-        set_automatic_stop(module_tmcm_1276, False)
-    else: 
-        set... """
-    if not module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.RightEndstop):
-        init_move_mm(module_tmcm_1276,15)    
-    set_automatic_stop(module_tmcm_1276, all(end_stop_status(module_tmcm_1276).values()))
-    while module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.RightEndstop):
-        module_tmcm_1276.moveBy(-rfs_speed)
-    module_tmcm_1276.stop()
-    right_end_position = module_tmcm_1276.getActualPosition()
-    virtual_zero = step_range + zero_telorance if right_end_position > 2147483647 else right_end_position - zero_telorance #right point what if it is small positive?
-    print('0: ', virtual_zero)
-    set_position(module_tmcm_1276, virtual_zero)
-    set_automatic_stop(module_tmcm_1276, False)
-    #move_back_zoro(module_tmcm_1276,zero_speed)
-    print("right switch found:", right_end_position)
-    #print("right end set as:", module_tmcm_1276.getActualPosition())
+
+
 
     # TODO: find left end
 
 
-    set_automatic_stop(module_tmcm_1276, all(end_stop_status(module_tmcm_1276).values()))
+    set_automatic_stop(module_tmcm_1276, all(end_stop_sw_status(module_tmcm_1276).values()))
     while module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.LeftEndstop):
-        module_tmcm_1276.moveBy(rfs_speed)
+        module_tmcm_1276.moveBy(-rfs_speed)
     module_tmcm_1276.stop()
     while not (module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.ActualVelocity) == 0):
         pass
@@ -157,13 +219,14 @@ def reference_search(module_tmcm_1276, mode=3):
     #move_by_pp(module_tmcm_1276,zero_telorance)
     print("left switch found:", left_end_position)
     if mode == 3 :
-        position_zero = int(left_end_position/2)-zero_telorance
+        position_zero = int((left_end_position+right_end_position)/2)-zero_telorance
     else:
         position_zero = right_end_position
     set_position(module_tmcm_1276, position_zero)
     print("ap is: ", module_tmcm_1276.getActualPosition())
-    move_back_zoro(module_tmcm_1276)
 
+    move_back_zoro(module_tmcm_1276)
+ """
 
 def set_position(module_tmcm_1276, position:int):
 
@@ -182,9 +245,12 @@ def set_position(module_tmcm_1276, position:int):
     # module_tmcm_1276.setActualPosition(0)
     # module_tmcm_1276.moveBy()
 
-def test(module_tmcm_1276, mode=2, state = True):
+def test(module_tmcm_1276, mode=3, state = True):
     module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.ReferenceSearchMode, mode)
+    module_tmcm_1276.setAxisParameter(194, 200000)
+    module_tmcm_1276.setAxisParameter(196, 190000)
     print("ap 193 value:", module_tmcm_1276.getAxisParameter(193))
+    
     #         return self.send(TMCL_Command.SAP, commandType, axis, value, moduleID)
     #     def move(self, moveType, motor, position, moduleID=None):
     #         return self.send(TMCL_Command.MVP, moveType, motor, position, moduleID)
@@ -195,38 +261,25 @@ def test(module_tmcm_1276, mode=2, state = True):
     #RFS START, 0				//start reference search
     #WAIT RFS, 0, 1000			//wait until RFS is done or timeou
     print("wait")
-    module_tmcm_1276.connection.send(27, 4, 0, 10000)
+    module_tmcm_1276.connection.send(27, 4, 0, 0)
     #module_tmcm_1276.connection.send(module_tmcm_1276.connection.TMCL_Command.MVP,0,0,1000,None)
     #module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticRightStop, int(not state))
     #module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.ActualPosition)
     while not (module_tmcm_1276.positionReached()):
         pass
-    right_end_position = module_tmcm_1276.getActualPosition()
-    print("right switch found:", right_end_position)
-    #print("right end set as starting piont", module_tmcm_1276.getActualPosition())
-    print("ap 196 value:", module_tmcm_1276.getAxisParameter(196))
 
-    module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticRightStop, int(state))
-    module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticLeftStop, int(not state))
-    module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.ActualPosition)
-    while not (module_tmcm_1276.positionReached()):
-        pass
-    left_end_position = module_tmcm_1276.getActualPosition()
-    print("left switch found:", left_end_position)
-    print("ap 196 value:", module_tmcm_1276.getAxisParameter(196))
-    return True
 
 def set_automatic_stop(module_tmcm_1276, state: bool) -> bool:
     """
     :param module_tmcm_1276:
-    :param state: bool True is on, False is off , 1 is off 0 is on
+    :param state: bool False is in, True is off , in manual 1 is off 0 is on, maybe I should revers it for bool operator
     :return:
     """
     #module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.ReferenceSearchMode, 2)
     # TODO: It has know bug when set AP to 1 and it is not on stop switch start to find L switch. find a way to fix it.
     try:
-        module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticLeftStop, int(not state))
-        module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticRightStop, int(not state))
+        module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticLeftStop, int(state))
+        module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticRightStop, int(state))
     except:
         print("some thing went wrong")
         return False
@@ -239,7 +292,7 @@ def set_automatic_stop(module_tmcm_1276, state: bool) -> bool:
         return state
     
 
-def end_stop_status(module_tmcm_1276)-> dict:
+def end_stop_sw_status(module_tmcm_1276)-> dict:
     right=module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.RightEndstop)
     left=module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.LeftEndstop)
     out={'R': not bool(right), 'L':
@@ -267,19 +320,20 @@ def main(*args):
 
     motor_init(max_acceleration, max_speed, module_tmcm_1276, stepping)
 
-    end_stop_status(module_tmcm_1276)
+    end_stop_sw_status(module_tmcm_1276)
 
     if args[0].init: init_move_mm(module_tmcm_1276,args[0].init)
     if args[0].RFS_mode: reference_search(module_tmcm_1276,args[0].RFS_mode) 
 
-    end_stop_status(module_tmcm_1276)
+    end_stop_sw_status(module_tmcm_1276)
     # **********************
     print("Current position is:", module_tmcm_1276.getActualPosition())
-    end_stop_status(module_tmcm_1276)
+    end_stop_sw_status(module_tmcm_1276)
     print("current position is:", module_tmcm_1276.getAxisParameter(196))
     move_back_zoro(module_tmcm_1276)
     set_automatic_stop(module_tmcm_1276,True)
     temp = input("w8 for staring command")
+    #test(module_tmcm_1276,3)
     trajectory_file = "trajectory.csv"
     trajectory_data, min_position = shifting_data(selecting_column(read_csv_file(trajectory_file), column_number=0))
     
@@ -325,9 +379,9 @@ def motor_init(max_acceleration, max_speed, module_tmcm_1276, stepping):
     module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.CurrentStepping, stepping)
     module_tmcm_1276.setAxisParameter(21, 0)
     module_tmcm_1276.connection.printInfo()
-    end_stop_status(module_tmcm_1276)
+    end_stop_sw_status(module_tmcm_1276)
     #test(module_tmcm_1276,2,True)
-    soft_stop_toggle(module_tmcm_1276)
+    soft_stop_toggle(module_tmcm_1276,False)
     print('max speed is:', module_tmcm_1276.getMaxVelocity())
     print("Current position is:", module_tmcm_1276.getActualPosition())
     names=['Start velocity (V START ) ',
@@ -349,7 +403,7 @@ def init_move_mm(module_tmcm_1276,move=None):
     print("pulse",unit_to_pulse(init_move))
     set_automatic_stop(module_tmcm_1276, False)
     move_by_unit(module_tmcm_1276, init_move)
-    print("done")
+    print("Init move finished.")
 
 #def set_zero_position(0)
 

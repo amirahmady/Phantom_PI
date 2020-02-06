@@ -28,7 +28,15 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args" : ["-c","pcan","-r","3", "-i", "-20" ]
+            "args" : ["-c","pcan","-r","3"]
+        },
+        {
+            "name": "Python: Phantom_pi, pcan, init and rfs on",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args" : ["-c","pcan","-r","3","-i","20"]
         },
         {
             "name": "Python: Current File (External Terminal)",
