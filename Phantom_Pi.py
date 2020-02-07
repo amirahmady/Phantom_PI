@@ -3,9 +3,9 @@
 Move a motor back and forth using the TMCM1276 module
 Created on 18.12.2019
 @author: Amir Ahmady
-'''
+for socket can please run this cmd in terminal:
 # sudo ip link set can0 up type can bitrate 1000000
-
+'''
 
 import argparse
 import csv
@@ -15,10 +15,7 @@ import PyTrinamic
 from PyTrinamic.connections.ConnectionManager import ConnectionManager
 from PyTrinamic.modules.TMCM_1276 import TMCM_1276
 
-MID_RANGE = 2147483647
-MAX_RANGE = MID_RANGE * 2
-MAX_SPEED = 12800 * 3 * 4
-STEPPING = 256
+import constant
 
 
 def read_csv_file(filename="trajectory.csv"):
