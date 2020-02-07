@@ -304,7 +304,7 @@ def main(*args):
     my_interface = connection_manager.connect()
     module_tmcm_1276 = TMCM_1276(my_interface)
     print("Warning if motor is not around postion zero it will go there automaticly")
-    max_acceleration = MAX_SPEED 
+    max_acceleration = MAX_SPEED
     default_motor = 0
     lead = lead_per_pulse(256, 0.10, 'in')
 
