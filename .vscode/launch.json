@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         
-
+    
     
         {
             "name": "Python: Current File (Integrated Terminal)",
@@ -28,7 +28,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args" : ["-c","pcan","-r","3"]
+            "args" : ["-c","pcan","-r","3"],
         },
         {
             "name": "Python: Phantom_pi, pcan, init and rfs on",

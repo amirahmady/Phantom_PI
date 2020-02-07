@@ -1,7 +1,7 @@
-def automatic_stop_toggle(module_tmcm_1276, **state: bool) -> bool:
-    print(state)
-
-#automatic_stop_toggle("mo",state=True)
-a={1:True,2:False}
-print(type(a))
-print(any(a.values()))
+import keyboard
+i=0
+while not keyboard.is_pressed('s'):
+    print('hi')
+    i+=1
+    print(i)
+print('HOYUYYY')

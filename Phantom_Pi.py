@@ -10,6 +10,7 @@ Created on 18.12.2019
 import argparse
 import csv
 import time
+import keyboard
 
 import PyTrinamic
 from PyTrinamic.connections.ConnectionManager import ConnectionManager
@@ -191,7 +192,7 @@ def reference_search(module_tmcm_1276, mode=3,rfs_speed=200000,zero_telorance = 
     #set_position(module_tmcm_1276, position_zero(rep=rep,lep=lep))
     #print("ap is: ", module_tmcm_1276.getActualPosition())
     move_to_pp(module_tmcm_1276,position_zero(rep=rep,lep=lep))
-    time.sleep(10)
+    set_position(module_tmcm_1276,0)
     """ 
     virtual_zero = step_range + zero_telorance if right_end_position > 2147483647 else right_end_position - zero_telorance #right point what if it is small positive?
 
@@ -228,11 +229,10 @@ def reference_search(module_tmcm_1276, mode=3,rfs_speed=200000,zero_telorance = 
     move_back_zoro(module_tmcm_1276)
  """
 
-def set_position(module_tmcm_1276, position:int):
+def set_position(module_tmcm_1276, position=0):
 
     module_tmcm_1276.setActualPosition(position)
     while not (module_tmcm_1276.getActualPosition() == position):
-        print(module_tmcm_1276.getActualPosition())
         module_tmcm_1276.setActualPosition(position)
         pass
     print("Position set to: ", module_tmcm_1276.getActualPosition())
@@ -344,22 +344,18 @@ def main(*args):
     set_automatic_stop(module_tmcm_1276,True)
     # while True:
     #     end_stop_status(module_tmcm_1276)
-    while True:
+    i=0
+    while i<10:
         module_tmcm_1276.rotate(100000)
         time.sleep(2)
         #module_tmcm_1276.stop()
         module_tmcm_1276.rotate(-100000)
         time.sleep(2)
-
-    #move= 25
-    #move_by_unit(module_tmcm_1276, move)
-        #move_by_unit(module_tmcm_1276, -move*2)
-        #move_by_unit(module_tmcm_1276, move*2)
-
-    #run_trajectory(trajectory_data, module_tmcm_1276)
-
+        i+=1
+    
+    module_tmcm_1276.stop()
     move_back_zoro(module_tmcm_1276)
-    my_interface.close()
+    my_interface.close()    
 
 def run_trajectory(trajectory_data, module_tmcm_1276):
     start = time.time()
