@@ -15,13 +15,14 @@ import PyTrinamic
 from PyTrinamic.connections.ConnectionManager import ConnectionManager
 from PyTrinamic.modules.TMCM_1276 import TMCM_1276
 
-import constant
+from constant import *
 
 
-def read_csv_file(filename="trajectory.csv"):
-    with open("trajectory.csv") as trajectory_file:
-        reader = csv.reader(trajectory_file, delimiter='\t')
-        next(reader)  # skip header
+def read_csv_file(filename="trajectory.csv", delimiter='\t', skip_header=False):
+    with open(filename) as trajectory_file:
+        reader = csv.reader(trajectory_file, delimiter=delimiter)
+        if skip_header:
+            next(reader)  # skip header
         data = [r for r in reader]
     return data
 
@@ -33,6 +34,14 @@ def selecting_column(data=list, column_number=0):
 def shifting_data(data=list()):
     minimum_position = min(data)
     return [float(x) - minimum_position for x in data], minimum_position
+
+
+def load_motion_data(filename, delimiter='\t'):
+    data = read_csv_file(filename, delimiter=delimiter)
+    x = selecting_column(data, 0)
+    v = selecting_column(data, 1)
+    a = selecting_column(data, 2)
+    return x, v, a
 
 
 def lead_per_pulse(stepping, leadScrewLead, unit='in'):
@@ -47,6 +56,9 @@ def lead_per_pulse(stepping, leadScrewLead, unit='in'):
 def unit_to_pulse(mm, lead=4.9609375e-05):
     return round(mm / lead)
 
+def pulse_to_unit(pp, lead=4.9609375e-05):
+    pp = -(MAX_RANGE-pp) if pp > 2147483647 else pp
+    return pp*lead
 
 def move_back_zoro(module_tmcm_1276, speed=153600):
     # print("current position is:", module_tmcm_1276.getActualPosition())
@@ -206,6 +218,7 @@ def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0)
     # print("ap is: ", module_tmcm_1276.getActualPosition())
     move_to_pp(module_tmcm_1276, position_zero(rep=rep, lep=lep), 100000)
     set_position(module_tmcm_1276, 0)
+    print("RSF done, Moved to Zero")
     return True
 
 
@@ -318,21 +331,38 @@ def main(*args):
     # **********************
     print("Current position is:", module_tmcm_1276.getActualPosition())
     end_stop_sw_status(module_tmcm_1276)
-    print("current position is:", module_tmcm_1276.getAxisParameter(196))
-    move_back_zoro(module_tmcm_1276)
     set_automatic_stop(module_tmcm_1276, False)
     temp = input("w8 for staring command")
     # test(module_tmcm_1276,3)
-    trajectory_file = "trajectory.csv"
-    trajectory_data, min_position = shifting_data(
-        selecting_column(read_csv_file(trajectory_file), column_number=0))
-
     # module_tmcm_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
 
     print("trajectory is loading")
     set_automatic_stop(module_tmcm_1276, False)
     # while True:
     #     end_stop_status(module_tmcm_1276)
+    # general_move(module_tmcm_1276)
+    x, v, a = load_motion_data("sin_taj.csv",',')
+    v[:]= [round(item / lead) for item in v] 
+    v=v[::21]
+    i = 0
+    while i < 5: 
+        for item in v[:-1]:
+            module_tmcm_1276.rotate(item)
+            time.sleep(0.02)
+        i += 1
+        print(i)
+
+
+    module_tmcm_1276.stop()
+    time.sleep(.5)
+    current_pos=module_tmcm_1276.getActualPosition()
+    print(current_pos,":",pulse_to_unit(current_pos))
+    temp = input("w8 for staring command")
+    move_back_zoro(module_tmcm_1276)
+    my_interface.close()
+
+
+def general_move(module_tmcm_1276):
     i = 0
     while i < 10:
         module_tmcm_1276.rotate(100000)
@@ -341,10 +371,6 @@ def main(*args):
         module_tmcm_1276.rotate(-100000)
         time.sleep(2)
         i += 1
-
-    module_tmcm_1276.stop()
-    move_back_zoro(module_tmcm_1276)
-    my_interface.close()
 
 
 def run_trajectory(trajectory_data, module_tmcm_1276):
