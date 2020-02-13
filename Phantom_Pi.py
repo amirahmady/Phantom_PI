@@ -56,15 +56,20 @@ def lead_per_pulse(stepping, leadScrewLead, unit='in'):
 def unit_to_pulse(mm, lead=4.9609375e-05):
     return round(mm / lead)
 
+
 def pulse_to_unit(pp, lead=4.9609375e-05):
     pp = -(MAX_RANGE-pp) if pp > 2147483647 else pp
-    return pp*lead
+    return round(pp*lead, 5)
+
 
 def move_back_zoro(module_tmcm_1276, speed=153600):
     # print("current position is:", module_tmcm_1276.getActualPosition())
     # print("Moving back to 0")
-    if module_tmcm_1276.getActualPosition() > 256:
-        move_to_pp(module_tmcm_1276, speed)
+    pos = 51200
+    while pos > 20:
+        pos = module_tmcm_1276.getActualPosition()
+        move_to_pp(module_tmcm_1276, 0, speed)
+        pos = -(MAX_RANGE-pos) if pos > 2147483647 else pos
     # print("Reached Position 0")
 
 
@@ -307,73 +312,30 @@ def soft_stop_toggle(module_tmcm_1276, toggle=True) -> bool:
     return bool(module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.softstop))
 
 
-def main(*args):
-    PyTrinamic.showInfo()
-    connection_manager = ConnectionManager(
-        argList=['--interface', args[0].connection])
-    my_interface = connection_manager.connect()
-    module_tmcm_1276 = TMCM_1276(my_interface)
-    print("Warning if motor is not around postion zero it will go there automaticly")
-    max_acceleration = MAX_SPEED
-    default_motor = 0
-    lead = lead_per_pulse(256, 0.10, 'in')
-
-    motor_init(max_acceleration, MAX_SPEED, module_tmcm_1276, STEPPING)
-
-    end_stop_sw_status(module_tmcm_1276)
-
-    if args[0].init:
-        init_move_mm(module_tmcm_1276, args[0].init)
-    if args[0].RFS_mode:
-        reference_search(module_tmcm_1276, args[0].RFS_mode, sw_telorance=0)
-
-    end_stop_sw_status(module_tmcm_1276)
-    # **********************
-    print("Current position is:", module_tmcm_1276.getActualPosition())
-    end_stop_sw_status(module_tmcm_1276)
-    set_automatic_stop(module_tmcm_1276, False)
-    temp = input("w8 for staring command")
-    # test(module_tmcm_1276,3)
-    # module_tmcm_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
-
-    print("trajectory is loading")
-    set_automatic_stop(module_tmcm_1276, False)
-    # while True:
-    #     end_stop_status(module_tmcm_1276)
-    # general_move(module_tmcm_1276)
-    x, v, a = load_motion_data("sin_taj.csv",',')
-    v[:]= [round(item / lead) for item in v] 
-    v=v[::21]
-    i = 0
-    while i < 5: 
-        for item in v[:-1]:
-            module_tmcm_1276.rotate(item)
-            time.sleep(0.02)
-        i += 1
-        print(i)
-
-
-    module_tmcm_1276.stop()
-    time.sleep(.5)
-    current_pos=module_tmcm_1276.getActualPosition()
-    print(current_pos,":",pulse_to_unit(current_pos))
-    temp = input("w8 for staring command")
-    move_back_zoro(module_tmcm_1276)
-    my_interface.close()
+def print_position(module_tmcm_1276, display=True):
+    pos_pps = module_tmcm_1276.getActualPosition()
+    pos_mm = pulse_to_unit(pos_pps)
+    print("PS: ", pos_pps, " mm :", pos_mm)
+    return(pos_pps, pos_mm)
 
 
 def general_move(module_tmcm_1276):
     i = 0
+    v=51200*4
     while i < 10:
-        module_tmcm_1276.rotate(100000)
-        time.sleep(2)
-        # module_tmcm_1276.stop()
-        module_tmcm_1276.rotate(-100000)
-        time.sleep(2)
+        module_tmcm_1276.rotate(v)
+        time.sleep(1)
+        module_tmcm_1276.stop()
+        time.sleep(1)
+        module_tmcm_1276.rotate(-v)
+        time.sleep(1)
+        module_tmcm_1276.stop()
+        time.sleep(1)
         i += 1
+    return print_position(module_tmcm_1276, display=False)
 
 
-def run_trajectory(trajectory_data, module_tmcm_1276):
+def run_trajectory(module_tmcm_1276, trajectory_data):
     start = time.time()
     for item in trajectory_data:
         start = time.time()
@@ -418,7 +380,82 @@ def init_move_mm(module_tmcm_1276, move=None):
     move_by_unit(module_tmcm_1276, init_move)
     print("Init move finished.")
 
-# def set_zero_position(0)
+
+def write_log(movement_log):
+    for item in movement_log:
+        item[0] = pulse_to_unit(item[0])
+        item[1] = -(MAX_RANGE-item[1]) if item[1] > 2147483647 else item[1]
+    with open('log_file.csv', mode='w') as log_file:
+        log_writer = csv.writer(log_file, delimiter=',',
+                                quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        log_writer.writerows(movement_log)
+
+
+def velocity_movement(lead, module_tmcm_1276):
+    x, v, a = load_motion_data("sin_taj.csv", ',')
+    v[:] = [round(item / lead) for item in v]
+    v = v[::21]  # .02 values
+    # v=v[:75]
+    i = 0
+    movement_log = []
+    while i < 2:
+        module_tmcm_1276.stop()
+        for item in v[:-1]:
+            module_tmcm_1276.rotate(item)
+            time.sleep(.02)
+            #movement_log.append([module_tmcm_1276.getActualPosition(
+            #), module_tmcm_1276.getActualVelocity(), item*i])
+
+        i += 1
+        #print(i)
+        #print_position(module_tmcm_1276)
+    return movement_log
+
+
+def main(*args):
+    PyTrinamic.showInfo()
+    connection_manager = ConnectionManager(
+        argList=['--interface', args[0].connection])
+    my_interface = connection_manager.connect()
+    module_tmcm_1276 = TMCM_1276(my_interface)
+    print("Warning if motor is not around postion zero it will go there automaticly")
+    max_acceleration = MAX_SPEED
+    default_motor = 0
+    lead = lead_per_pulse(256, 0.10, 'in')
+
+    motor_init(max_acceleration, MAX_SPEED, module_tmcm_1276, STEPPING)
+
+    end_stop_sw_status(module_tmcm_1276)
+
+    if args[0].init:
+        init_move_mm(module_tmcm_1276, args[0].init)
+    if args[0].RFS_mode:
+        reference_search(module_tmcm_1276, args[0].RFS_mode, sw_telorance=0)
+
+    end_stop_sw_status(module_tmcm_1276)
+    # **********************
+    print("Current position is:", module_tmcm_1276.getActualPosition())
+    end_stop_sw_status(module_tmcm_1276)
+    set_automatic_stop(module_tmcm_1276, False)
+    move_back_zoro(module_tmcm_1276)
+    temp = input("w8 for staring command")
+    # test(module_tmcm_1276,3)
+    # module_tmcm_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
+    print_position(module_tmcm_1276)
+    print("trajectory is loading")
+    set_automatic_stop(module_tmcm_1276, False)
+    # while True:
+    #     end_stop_status(module_tmcm_1276)
+    #movement_log = general_move(module_tmcm_1276)
+    movement_log = velocity_movement(lead, module_tmcm_1276)
+
+    module_tmcm_1276.stop()
+    time.sleep(.5)
+    print_position(module_tmcm_1276)
+    move_back_zoro(module_tmcm_1276)
+    print_position(module_tmcm_1276)
+    write_log(movement_log)
+    my_interface.close()
 
 
 if __name__ == "__main__":
