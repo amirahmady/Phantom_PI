@@ -14,7 +14,7 @@ def load_motion_data(filename, delimiter='\t'):
 def velocity_movement(lead):
     x, v, a = load_motion_data("sin_taj.csv", ',')
     v[:] = [round(item / lead) for item in v]
-    a[:] = [round(item / lead) for item in a]
+    a[:] = [round(item) for item in a]
     v = v[::21] # .02 values
     a =a [::21]  # .02 values
     # v=v[:75]
@@ -39,7 +39,7 @@ out=velocity_movement(lead)
 
 _y=[]
 for item in out:
-    _y.append(round(item[2],4))
+    _y.append(round(item[1],4))
 print(sum(_y))
 print(pulse_to_unit(sum(_y)))
 _x = range(0, len(_y))

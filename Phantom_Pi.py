@@ -346,7 +346,7 @@ def run_trajectory(module_tmcm_1276, trajectory_data):
             time.sleep(.02 - time_diff)
 
 
-def motor_init(max_acceleration, max_speed, module_tmcm_1276, stepping):
+def motor_init(module_tmcm_1276, stepping=256,max_acceleration=300000, max_speed=300000):
     print("Starting position is:", module_tmcm_1276.getActualPosition())
     module_tmcm_1276.setMaxAcceleration(max_acceleration)
     module_tmcm_1276.setMaxVelocity(max_speed)
@@ -383,32 +383,33 @@ def init_move_mm(module_tmcm_1276, move=None):
 
 def write_log(movement_log):
     for item in movement_log:
-        item[0] = pulse_to_unit(item[0])
-        item[1] = -(MAX_RANGE-item[1]) if item[1] > 2147483647 else item[1]
+        item[2] = pulse_to_unit(item[2])
+        item[3] = -(MAX_RANGE-item[3]) if item[3] > 2147483647 else item[3]
     with open('log_file.csv', mode='w') as log_file:
-        log_writer = csv.writer(log_file, delimiter=',',
-                                quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        log_writer = csv.writer(log_file, delimiter=',')
         log_writer.writerows(movement_log)
 
 
 def velocity_movement(lead, module_tmcm_1276):
     x, v, a = load_motion_data("sin_taj.csv", ',')
-    v[:] = [round(item / lead) for item in v]
-    a[:] = [round(item / lead) for item in a]
+    v[:] = [round(item *2500) for item in v]
+    a[:] = [round(item *2500) for item in a]
+    print(max(v),max(a))
     v = v[::21] # .02 values
     a =a [::21]  # .02 values
     # v=v[:75]
-    i = 0
+    i = 1
     movement_log = []
-    while i < 1:
+    while i < 10:
         module_tmcm_1276.stop()
         for item,a_item in zip(v[:-1], a[:-1]):
             module_tmcm_1276.rotate(item)
             module_tmcm_1276.setMaxAcceleration(a_item)
+            #module_tmcm_1276.setMaxAcceleration(a_item)
             time.sleep(.02)
-            #movement_log.append([module_tmcm_1276.getActualPosition(
-            #), module_tmcm_1276.getActualVelocity(), item*i])
-
+            #module_tmcm_1276.stop()
+            movement_log.append([str(i), item, module_tmcm_1276.getActualPosition(
+            ), module_tmcm_1276.getActualVelocity()])
         i += 1
         #print(i)
         #print_position(module_tmcm_1276)
@@ -423,10 +424,11 @@ def main(*args):
     module_tmcm_1276 = TMCM_1276(my_interface)
     print("Warning if motor is not around postion zero it will go there automaticly")
     max_acceleration = int(MAX_SPEED*1.2)
+    print(max_acceleration)
     default_motor = 0
     lead = lead_per_pulse(256, 0.10, 'in')
 
-    motor_init(max_acceleration, MAX_SPEED, module_tmcm_1276, STEPPING)
+    motor_init(module_tmcm_1276,STEPPING, max_acceleration, MAX_SPEED )
 
     end_stop_sw_status(module_tmcm_1276)
 
@@ -441,6 +443,7 @@ def main(*args):
     end_stop_sw_status(module_tmcm_1276)
     set_automatic_stop(module_tmcm_1276, False)
     move_back_zoro(module_tmcm_1276)
+    #module_tmcm_1276.rotate(-300000)
     temp = input("w8 for staring command")
     # test(module_tmcm_1276,3)
     # module_tmcm_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
