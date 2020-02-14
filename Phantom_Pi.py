@@ -394,14 +394,17 @@ def write_log(movement_log):
 def velocity_movement(lead, module_tmcm_1276):
     x, v, a = load_motion_data("sin_taj.csv", ',')
     v[:] = [round(item / lead) for item in v]
-    v = v[::21]  # .02 values
+    a[:] = [round(item / lead) for item in a]
+    v = v[::21] # .02 values
+    a =a [::21]  # .02 values
     # v=v[:75]
     i = 0
     movement_log = []
-    while i < 2:
+    while i < 1:
         module_tmcm_1276.stop()
-        for item in v[:-1]:
+        for item,a_item in zip(v[:-1], a[:-1]):
             module_tmcm_1276.rotate(item)
+            module_tmcm_1276.setMaxAcceleration(a_item)
             time.sleep(.02)
             #movement_log.append([module_tmcm_1276.getActualPosition(
             #), module_tmcm_1276.getActualVelocity(), item*i])
@@ -419,7 +422,7 @@ def main(*args):
     my_interface = connection_manager.connect()
     module_tmcm_1276 = TMCM_1276(my_interface)
     print("Warning if motor is not around postion zero it will go there automaticly")
-    max_acceleration = MAX_SPEED
+    max_acceleration = int(MAX_SPEED*1.2)
     default_motor = 0
     lead = lead_per_pulse(256, 0.10, 'in')
 
