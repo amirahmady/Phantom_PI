@@ -36,7 +36,7 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "args" : ["-c","pcan","-r","3","-i","20"]
+            "args" : ["-c","pcan","-r","3","-i","+35"]
         },
         {
             "name": "Python: Current File (External Terminal)",
