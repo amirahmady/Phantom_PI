@@ -17,6 +17,7 @@ from PyTrinamic.connections.ConnectionManager import ConnectionManager
 from PyTrinamic.modules.TMCM_1276 import TMCM_1276
 
 from constant import *
+from sine_wave import Sine_Wave
 
 
 def read_csv_file(filename="trajectory.csv", delimiter='\t', skip_header=False):
@@ -129,7 +130,7 @@ def move_to_pp(module_tmcm_1276, position: int, speed=MAX_SPEED) -> bool:
 def move_to_unit(moduleTMCM_1276, position, unit='SI'):
     # add in or si postioning
     # print(position, move_by_mm(position))
-    moduleTMCM_1276.moveTo(unit_to_pulse(position))
+    moduleTMCM_1276.moveTo(unit_to_pulse(position, lead))
     moduleTMCM_1276.getAxisParameter(moduleTMCM_1276.APs.ActualPosition)
     while not (moduleTMCM_1276.positionReached()):
         pass
@@ -278,7 +279,7 @@ def test(module_tmcm_1276, mode=3, state=True):
 
 
 def set_automatic_stop(module_tmcm_1276, state: bool) -> bool:
-    """
+    """makh
     :param module_tmcm_1276:
     :param state: bool False is on, True is off , in manual 1 is off 0 is on, maybe I should revers it for bool operator
     :return:
@@ -336,7 +337,7 @@ def soft_stop_toggle(module_tmcm_1276, toggle=True) -> bool:
 def print_position(module_tmcm_1276, display=True):
     pos_pps = module_tmcm_1276.getActualPosition()
     pos_mm = pulse_to_unit(pos_pps, lead)
-    print("PS: ", pos_pps, " mm :", pos_mm, 'lead:',lead)
+    print("PS: ", pos_pps, " mm :", pos_mm, 'lead:', lead)
     return(pos_pps, pos_mm)
 
 
@@ -414,31 +415,39 @@ def write_log(movement_log):
         log_writer.writerows(movement_log)
 
 
-def velocity_movement(module_tmcm_1276, lead, maximum_velocity=10, filename="sin_taj.csv"):
-    Hz = 1
+def velocity_movement(module_tmcm_1276, lead, filename="sin_taj.csv"):
+
+    Hz = 50
+
+    def get_velocity_pram(v, a):
+        max_v = max(v) if abs(max(v)) >= abs(min(v)) else abs(min(v))
+        v = v[::21]  # .02 values
+        a = a[::21]  # .02 values
+        v[:] = [ceil(3*c*item/4) for item in v]
+        a[:] = [ceil(3*c*item/4) for item in a]
+        return max_v, v, a
+
+    c = unit_to_pulse(1, lead)
     x, v, a = load_motion_data(filename, ',')
-    max_v = max(v) if abs(max(v)) >= abs(min(v)) else abs(min(v))
-    max_pps = unit_to_pulse(1, lead)
-    if max_pps > 250000:
-        print("Over speed")
+    max_v, v, a = get_velocity_pram(v, a)
+
+    if c*max_v > 300000:
+        print("Over speed:", c*max_v)
         raise Exception
-    c = max_pps  # / (max_v*Hz)
-    v = v[::21]  # .02 values
-    a = a[::21]  # .02 values
-    v[:] = [ceil(c*item) for item in v]
-    a[:] = [ceil(c*item) for item in a]
+    module_tmcm_1276.setMaxVelocity(MAX_SPEED)
     i = 0
     movement_log = []
-    while i < 1:
+    while i < 4:
         module_tmcm_1276.stop()
-        for item, a_item in zip(v[:-1], a[:-1]):
-            module_tmcm_1276.rotate(item)
+        for item, a_item in zip(v, a):
             module_tmcm_1276.setMaxAcceleration(a_item)
+            module_tmcm_1276.rotate(item)
             time.sleep(.02)
-        module_tmcm_1276.stop()
+        # module_tmcm_1276.stop()
         i += 1
         print(i)
         print_position(module_tmcm_1276)
+
     module_tmcm_1276.setMaxAcceleration(MAX_SPEED)
     module_tmcm_1276.setMaxVelocity(MAX_SPEED)
     while module_tmcm_1276.getActualVelocity():
@@ -468,7 +477,7 @@ def main(*args):
         # time.sleep(4)
         # t=time.time()
         init_move_mm(module_tmcm_1276, args[0].init)
-        temp = input("w8 for staring command")
+        temp = input("Waiting for starting command")
         # print(module_tmcm_1276.getActualVelocity(),module_tmcm_1276.getMaxVelocity())
         # print(time.time()-t)
 
@@ -482,8 +491,7 @@ def main(*args):
     set_automatic_stop(module_tmcm_1276, False)
     move_back_zoro(module_tmcm_1276)
     # module_tmcm_1276.rotate(-300000)
-    temp = input("w8 for staring command")
-    temp = input("w8 for staring command")
+    temp = input("Waiting for starting command")
     # test(module_tmcm_1276,3)
     # module_tmcm_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
     print_position(module_tmcm_1276)
@@ -493,7 +501,7 @@ def main(*args):
     #     end_stop_status(module_tmcm_1276)
     # movement_log = general_move(module_tmcm_1276)
     movement_log = velocity_movement(
-        module_tmcm_1276, lead, 10, filename="sin_taj.csv")
+        module_tmcm_1276, lead, filename="sin_taj.csv")
 
     module_tmcm_1276.stop()
     time.sleep(.5)
