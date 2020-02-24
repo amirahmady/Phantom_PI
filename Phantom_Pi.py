@@ -9,6 +9,7 @@ for socket can please run this cmd in terminal:
 
 import argparse
 import csv
+import json
 import time
 from math import ceil
 
@@ -155,7 +156,7 @@ def parse_arguments():
     return args
 
 
-def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0) -> bool:
+def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0,axis=0) -> bool:
     # TODO: set left and right position and define zero in regrading the mode
     # TODO: find right end
     # zero_telorance = int(unit_to_pulse(2))
@@ -169,8 +170,6 @@ def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0)
         set_automatic_stop(module_tmcm_1276, False)
         module_tmcm_1276.rotate(rfs_speed)
         while module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.RightEndstop):
-            print(module_tmcm_1276.getAxisParameter(
-                module_tmcm_1276.APs.RightEndstop))
             pass
         module_tmcm_1276.stop()
         rep = module_tmcm_1276.getActualPosition()
@@ -190,18 +189,27 @@ def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0)
         move_by_pp(module_tmcm_1276, zero_telorance)
         return lep
 
-    def position_zero(rep=0, lep=0) -> int:
+    def position_zero(rep=0, lep=0,axis=0) -> int:
         print('Rep: ', rep, 'Lep: ', lep)
         lep = -(MAX_RANGE-lep) if lep > 2147483647 else lep
         rep = -(MAX_RANGE-rep) if rep > 2147483647 else rep
         if mode == 3:
-            print('Rep: ', rep, 'Lep: ', lep)
+            #print('Rep: ', rep, 'Lep: ', lep,rep-lep)         
             value = int((rep+lep)/2)
-            dist = abs(lep-rep)-unit_to_pulse(2, lead)*2
-            module_tmcm_1276.setAxisParameter(196, dist)
         else:
             print("This RFS's method is not implimented yet.")
             raise NotImplementedError
+
+        file_name='ref_pos.json'
+
+        with open(file_name) as json_file:
+            data=json.load(json_file)
+        dictionary={
+            "axis":axis,
+            "lenght":value
+        }
+        data.append(dictionary)
+        write_json(dictionary,file_name)
         return value
 
     # set_automatic_stop(module_tmcm_1276, all(end_stop_sw_status(module_tmcm_1276).values()))
@@ -230,10 +238,15 @@ def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0)
 
     # set_position(module_tmcm_1276, position_zero(rep=rep,lep=lep))
     # print("ap is: ", module_tmcm_1276.getActualPosition())
-    move_to_pp(module_tmcm_1276, position_zero(rep=rep, lep=lep), 51200)
+    move_to_pp(module_tmcm_1276, position_zero(rep=rep, lep=lep,axis=axis), int(MAX_SPEED/6))
     set_position(module_tmcm_1276, 0)
     print("RSF done, Moved to Zero")
+
     return True
+
+def write_json(data, filename='data.json'): 
+    with open(filename,'w') as f: 
+        json.dump(data, f, indent=4) 
 
 
 def set_position(module_tmcm_1276, position=0):
@@ -371,6 +384,8 @@ def run_trajectory(module_tmcm_1276, trajectory_data):
 def motor_init(module_tmcm_1276, stepping=8, max_acceleration=300000, max_speed=300000):
     # print("MAX CUR",module_tmcm_1276.setAxisParameter(6,224))
     print("MAX CUR", module_tmcm_1276.getAxisParameter(6))
+    module_tmcm_1276.setGlobalParameter(82,0,1000) # Motor Will stop if no can msg for one second
+    module_tmcm_1276.setGlobalParameter(0,84,0) # Turn on cordinate storage to eeprom if set to 1
     print("Starting position is:", module_tmcm_1276.getActualPosition())
     module_tmcm_1276.setMaxAcceleration(max_acceleration)
     module_tmcm_1276.setMaxVelocity(max_speed)
@@ -506,8 +521,9 @@ def main(*args):
     module_tmcm_1276.stop()
     time.sleep(.5)
     print_position(module_tmcm_1276)
-    module_tmcm_1276.setMaxAcceleration(350000)
-    move_back_zoro(module_tmcm_1276, 350000)
+    module_tmcm_1276.setMaxAcceleration(MAX_SPEED)
+    move_back_zoro(module_tmcm_1276, MAX_SPEED)
+
     print_position(module_tmcm_1276)
     write_log(movement_log)
     my_interface.close()

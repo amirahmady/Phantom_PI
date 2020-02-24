@@ -15,15 +15,20 @@ def main(*args):
     print("motor stopped")
     lead = lead_per_pulse(256, 0.40, 'in')
     max_pps = unit_to_pulse(10, lead)
-    print(max_pps*4)
+    #print(max_pps*4)
     end_stop_sw_status(module_tmcm_1276)
-    print(module_tmcm_1276.getAxisParameter(140))
+    #print(module_tmcm_1276.getAxisParameter(196))
+    module_tmcm_1276.setGlobalParameter(82,0,1000)
+    print('gp:',module_tmcm_1276.getGlobalParameter(0,2))
+    print('ap:',module_tmcm_1276.getActualPosition())
+    module_tmcm_1276.setGlobalParameter(0,2,10)
+
     i=0
     module_tmcm_1276.setMaxAcceleration(-100)
     while module_tmcm_1276.getMaxAcceleration()==0:
         module_tmcm_1276.setMaxAcceleration(-i)
         i=i+1
-    print(module_tmcm_1276.getMaxAcceleration())
+    #print(module_tmcm_1276.getMaxAcceleration())
     init_move_mm(module_tmcm_1276,lead)
     # module_tmcm_1276.rotate(100575)
     # time.sleep(3)
