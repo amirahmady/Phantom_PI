@@ -150,13 +150,36 @@ def parse_arguments():
                         type=int, help='init movement')
     parser.add_argument('-r', '--RFS', dest='RFS_mode',
                         type=int, help="do refrence search")
-    parser.add_argument('remaining_args', nargs=argparse.REMAINDER)
+    parser.add_argument('--host-id', dest='host_id', action='store', nargs=1, type=str, default='4',
+                        help='TMCL host-id (default: %(default)s)')
+    parser.add_argument('--module-id', dest='module_id', action='store', nargs=1, type=str, default='2',
+                        help='TMCL module-id (default: %(default)s)')
+    parser.add_argument('--lead', dest='laed', action='store', nargs=1, type=str, default='0.10',
+                        help='screw lead (default: %(default)s)')                    
+    parser.add_argument('--add-axis', dest='extra_axises', action='store', type=str,
+                        help='number of axis follow by host-id module-id lead-screw(in) "1 5 6 0.04"')
+    parser.add_argument('otherthings', nargs="*")
     args = parser.parse_args()
+    if args.extra_axises:
+        s=args.extra_axises.split()
+        try:
+            s=list(map(float,s))
+        except:
+            print("All add axis arguments must be numbers.")
+            raise(TypeError)
+        axis_out=[[] for i in range(int(s[0]))]
+        n=3
+        for item in range(int(s[0])):
+            axis_out[item].append(int(s[item*n+1]))
+            axis_out[item].append(int(s[item*n+2]))
+            axis_out[item].append(s[item*n+3])
+
+    args.extra_axises=axis_out
     args.connection = output[args.connection]
     return args
 
 
-def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0,axis=0) -> bool:
+def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0, axis=0) -> bool:
     # TODO: set left and right position and define zero in regrading the mode
     # TODO: find right end
     # zero_telorance = int(unit_to_pulse(2))
@@ -189,27 +212,27 @@ def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0,
         move_by_pp(module_tmcm_1276, zero_telorance)
         return lep
 
-    def position_zero(rep=0, lep=0,axis=0) -> int:
+    def position_zero(rep=0, lep=0, axis=0) -> int:
         print('Rep: ', rep, 'Lep: ', lep)
         lep = -(MAX_RANGE-lep) if lep > 2147483647 else lep
         rep = -(MAX_RANGE-rep) if rep > 2147483647 else rep
         if mode == 3:
-            #print('Rep: ', rep, 'Lep: ', lep,rep-lep)         
+            #print('Rep: ', rep, 'Lep: ', lep,rep-lep)
             value = int((rep+lep)/2)
         else:
             print("This RFS's method is not implimented yet.")
             raise NotImplementedError
 
-        file_name='ref_pos.json'
+        file_name = 'ref_pos.json'
 
         with open(file_name) as json_file:
-            data=json.load(json_file)
-        dictionary={
-            "axis":axis,
-            "lenght":value
+            data = json.load(json_file)
+        dictionary = {
+            "axis": axis,
+            "lenght": value
         }
         data.append(dictionary)
-        write_json(dictionary,file_name)
+        write_json(dictionary, file_name)
         return value
 
     # set_automatic_stop(module_tmcm_1276, all(end_stop_sw_status(module_tmcm_1276).values()))
@@ -238,15 +261,17 @@ def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0,
 
     # set_position(module_tmcm_1276, position_zero(rep=rep,lep=lep))
     # print("ap is: ", module_tmcm_1276.getActualPosition())
-    move_to_pp(module_tmcm_1276, position_zero(rep=rep, lep=lep,axis=axis), int(MAX_SPEED/6))
+    move_to_pp(module_tmcm_1276, position_zero(
+        rep=rep, lep=lep, axis=axis), int(MAX_SPEED/6))
     set_position(module_tmcm_1276, 0)
     print("RSF done, Moved to Zero")
 
     return True
 
-def write_json(data, filename='data.json'): 
-    with open(filename,'w') as f: 
-        json.dump(data, f, indent=4) 
+
+def write_json(data, filename='data.json'):
+    with open(filename, 'w') as f:
+        json.dump(data, f, indent=4)
 
 
 def set_position(module_tmcm_1276, position=0):
@@ -384,8 +409,10 @@ def run_trajectory(module_tmcm_1276, trajectory_data):
 def motor_init(module_tmcm_1276, stepping=8, max_acceleration=300000, max_speed=300000):
     # print("MAX CUR",module_tmcm_1276.setAxisParameter(6,224))
     print("MAX CUR", module_tmcm_1276.getAxisParameter(6))
-    module_tmcm_1276.setGlobalParameter(82,0,1000) # Motor Will stop if no can msg for one second
-    module_tmcm_1276.setGlobalParameter(0,84,0) # Turn on cordinate storage to eeprom if set to 1
+    # Motor Will stop if no can msg for one second
+    module_tmcm_1276.setGlobalParameter(82, 0, 1000)
+    # Turn on cordinate storage to eeprom if set to 1
+    module_tmcm_1276.setGlobalParameter(0, 84, 0)
     print("Starting position is:", module_tmcm_1276.getActualPosition())
     module_tmcm_1276.setMaxAcceleration(max_acceleration)
     module_tmcm_1276.setMaxVelocity(max_speed)
@@ -472,10 +499,17 @@ def velocity_movement(module_tmcm_1276, lead, filename="sin_taj.csv"):
 
 def main(*args):
     PyTrinamic.showInfo()
-    connection_manager = ConnectionManager(
-        argList=['--interface', args[0].connection])  # '--host-id',"4","--module-id","3"
-    my_interface = connection_manager.connect()
-    module_tmcm_1276 = TMCM_1276(my_interface)
+    module_tmcm_1276 = list(range(3))
+    if args[0].extra_axises:
+        pass
+    else:
+        connection_manager = ConnectionManager(
+            argList=['--interface', args[0].connection, '--module-id',
+            args[0].module_id, '--host-id', args[0].host_id])  # '--host-id',"4","--module-id","3"
+        my_interface=[]
+        my_interface[0] = connection_manager.connect()
+        module_tmcm_1276[0] = TMCM_1276(my_interface[0])
+    
     print("Warning if motor is not around postion zero it will go there automaticly")
     max_acceleration = int(MAX_SPEED*1.2)
     print(max_acceleration)
@@ -483,50 +517,50 @@ def main(*args):
     global lead
     lead = lead_per_pulse(256, 0.40, 'in')
 
-    motor_init(module_tmcm_1276, STEPPING, max_acceleration, MAX_SPEED)
+    motor_init(module_tmcm_1276[0], STEPPING, max_acceleration, MAX_SPEED)
 
-    end_stop_sw_status(module_tmcm_1276)
+    end_stop_sw_status(module_tmcm_1276[0])
 
     if args[0].init:
         # module_tmcm_1276.rotate(350000)
         # time.sleep(4)
         # t=time.time()
-        init_move_mm(module_tmcm_1276, args[0].init)
+        init_move_mm(module_tmcm_1276[0], args[0].init)
         temp = input("Waiting for starting command")
         # print(module_tmcm_1276.getActualVelocity(),module_tmcm_1276.getMaxVelocity())
         # print(time.time()-t)
 
     if args[0].RFS_mode:
-        reference_search(module_tmcm_1276, args[0].RFS_mode, sw_telorance=0)
+        reference_search(module_tmcm_1276[0], args[0].RFS_mode, sw_telorance=0)
 
-    end_stop_sw_status(module_tmcm_1276)
+    end_stop_sw_status(module_tmcm_1276[0])
     # **********************
-    print("Current position is:", module_tmcm_1276.getActualPosition())
-    end_stop_sw_status(module_tmcm_1276)
-    set_automatic_stop(module_tmcm_1276, False)
-    move_back_zoro(module_tmcm_1276)
+    print("Current position is:", module_tmcm_1276[0].getActualPosition())
+    end_stop_sw_status(module_tmcm_1276[0])
+    set_automatic_stop(module_tmcm_1276[0], False)
+    move_back_zoro(module_tmcm_1276[0])
     # module_tmcm_1276.rotate(-300000)
     temp = input("Waiting for starting command")
     # test(module_tmcm_1276,3)
     # module_tmcm_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
-    print_position(module_tmcm_1276)
+    print_position(module_tmcm_1276[0])
     print("trajectory is loading")
-    set_automatic_stop(module_tmcm_1276, False)
+    set_automatic_stop(module_tmcm_1276[0], False)
     # while True:
     #     end_stop_status(module_tmcm_1276)
     # movement_log = general_move(module_tmcm_1276)
     movement_log = velocity_movement(
-        module_tmcm_1276, lead, filename="sin_taj.csv")
+        module_tmcm_1276[0], lead, filename="sin_taj.csv")
 
-    module_tmcm_1276.stop()
+    module_tmcm_1276[0].stop()
     time.sleep(.5)
     print_position(module_tmcm_1276)
-    module_tmcm_1276.setMaxAcceleration(MAX_SPEED)
-    move_back_zoro(module_tmcm_1276, MAX_SPEED)
+    module_tmcm_1276[0].setMaxAcceleration(MAX_SPEED)
+    move_back_zoro(module_tmcm_1276[0], MAX_SPEED)
 
-    print_position(module_tmcm_1276)
+    print_position(module_tmcm_1276[0])
     write_log(movement_log)
-    my_interface.close()
+    my_interface[0].close()
 
 
 if __name__ == "__main__":

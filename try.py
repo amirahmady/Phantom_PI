@@ -1,5 +1,10 @@
 import json 
-  
+
+
+class Save_Axis_Pram:
+    def __init__(self):
+        super().__init__()
+        self
 axis=0
 value=836249  
 # function to add to JSON 
@@ -14,8 +19,7 @@ file_name='ref_pos.json'
 try:
     with open(file_name) as json_file:
         data=json.load(json_file)
-        
-    
+            
 except :
         data={}
 dictionary={
