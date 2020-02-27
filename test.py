@@ -1,21 +1,26 @@
 #!/usr/bin/env python3
 
-import argparse
-import configparser
+class Person:
+  def __init__(self, fname, lname):
+    self.firstname = fname
+    self.lastname = lname
 
-config = configparser.ConfigParser()
-config.read('config3.ini')
-try:
-    defaults = config['default']
-except KeyError:
-    defaults = dict()
+  def printname(self):
+    print(self.firstname, self.lastname)
 
-parser = argparse.ArgumentParser()
-parser.add_argument('-a', dest='arg1')
-parser.add_argument('-b', dest='arg2')
-parser.add_argument('-c', dest='arg3')
-args = vars(parser.parse_args())
-print(args)
-result = dict(defaults)
-result.update({k: v for k, v in args.items() if v is not None})  # Update if v is not None
-print(result)
+class Student(Person):
+    def __init__(self, *args):
+        super().__init__(self,args)
+        self.graduationyear =  0
+        self.t=0
+    def calc(self,number):
+        self.t=self.graduationyear+4
+        return self.t
+
+
+
+
+x = Student("Mike", "Olsen")
+x.graduationyear=10
+print(x.calc(4))
+print(x.t)
