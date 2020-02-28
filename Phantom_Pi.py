@@ -632,7 +632,7 @@ def main(*args):
 
     print_position(module_tmcm_1276[0])
     # write_log(movement_log)
-    my_interface[1].close()
+    my_interface[0].close()
     for idx in range(len(my_interface)):
         my_interface[idx].close()
 

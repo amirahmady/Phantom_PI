@@ -10,13 +10,14 @@ def main(*args):
     module_tmcm_1276=[0,0]
     PyTrinamic.showInfo()
     connection_manager = ConnectionManager(
-        argList=['--interface', args[0].connection, '--module-id',"1",'--host-id','2'])
+        argList=['--interface', args[0].connection, '--port','PCAN_USBBUS1','--module-id',"1",'--host-id','2'])
     my_interface[0] = connection_manager.connect()
     module_tmcm_1276[0] = TMCM_1276(my_interface[0])
     module_tmcm_1276[0].stop()
 
     connection_manager = ConnectionManager(
-        argList=['--interface', args[0].connection, '--module-id',"3",'--host-id','2'])
+        argList=['--interface', args[0].connection,'--port','PCAN_USBBUS1', '--module-id',"3",'--host-id','2'])
+    my_interface[0].close()
     my_interface[1] = connection_manager.connect()
     module_tmcm_1276[1] = TMCM_1276(my_interface[0])
     module_tmcm_1276[1].stop()
@@ -37,6 +38,8 @@ def main(*args):
         module_tmcm_1276[0].setMaxAcceleration(-i)
         i=i+1
     #print(module_tmcm_1276[0]getMaxAcceleration())
+    my_interface[1].close()
+    my_interface[0] = connection_manager.connect()
     init_move_mm(module_tmcm_1276[0],lead)
     # module_tmcm_1276[0]rotate(100575)
     # time.sleep(3)

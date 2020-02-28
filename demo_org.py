@@ -12,7 +12,7 @@ import time
 
 PyTrinamic.showInfo()
 connectionManager = ConnectionManager(
-        argList=['--interface', 'pcan_tmcl', '--module-id',"1",'--host-id','2'])
+        argList=['--interface', 'pcan_tmcl', '--module-id',"3",'--host-id','2'])
 #connectionManager = ConnectionManager()
 myInterface = connectionManager.connect()
 TMCM_1276 = TMCM_1276(myInterface)
@@ -30,7 +30,7 @@ temp=input("press return")
 print("Rotating")
 TMCM_1276.rotate(20000)
 
-time.sleep(5);
+time.sleep(5)
 
 print("Stopping")
 TMCM_1276.stop()
