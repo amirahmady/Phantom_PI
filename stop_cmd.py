@@ -12,14 +12,14 @@ def main(*args):
     
     PyTrinamic.showInfo()
     connection_manager[0] = ConnectionManager(
-        argList=['--interface', args[0].connection, '--port','PCAN_USBBUS1','--module-id',"4",'--host-id','5'])
+        argList=['--interface', args[0].connection,'--module-id',"4",'--host-id','5'])
     my_interface[0] = connection_manager[0].connect()
     module_tmcm_1276[0] = TMCM_1276(my_interface[0])
     module_tmcm_1276[0].stop()
 
     my_interface[0].close()
     connection_manager[1] = ConnectionManager(
-        argList=['--interface', args[0].connection,'--port','PCAN_USBBUS1', '--module-id',"1",'--host-id','2'])
+        argList=['--interface', args[0].connection,'--module-id',"1",'--host-id','2'])
     my_interface[1] = connection_manager[1].connect()
     module_tmcm_1276[1] = TMCM_1276(my_interface[1])
     module_tmcm_1276[1].stop()
