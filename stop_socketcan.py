@@ -53,7 +53,7 @@ temp=input("press return")
 print("Rotating")
 
 for tmcm in module_tmcm_1276:
-    tmcm.rotate(+20000)
+    tmcm.rotate(-20000)
 
 time.sleep(5)
 

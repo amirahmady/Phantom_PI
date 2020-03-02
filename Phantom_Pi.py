@@ -204,7 +204,7 @@ def parse_arguments():
                         help="use socketcan or pcan as connection", required=True, type=str)     
     parser.add_argument('-i', '--init', dest='init',
                         type=int, help='init movement')
-    parser.add_argument('-r', '--RFS', dest='RFS_mode',
+    parser.add_argument('-r', '--RFS', dest='rfs_mode',
                         type=int, help="do refrence search")
     parser.add_argument('--host-id', dest='host_id', action='store', nargs=1, type=str, default='2',
                         help='TMCL host-id (default: %(default)s)')
@@ -229,7 +229,7 @@ def parse_arguments():
     # Update if v is not None
     result.update({k: v for k, v in _args.items() if v is not None})
     result['init']=int(result['init']) if result['init'] is not None else None
-    result['RFS_mode']=int(result['RFS_mode']) if result['RFS_mode'] is not None else None
+    result['rfs_mode']=int(result['rfs_mode']) if result['rfs_mode'] is not None else None
 
     args = argparse.Namespace(**result)
     extra_axis(args)
@@ -601,7 +601,8 @@ def main(*args):
 
     motor_init(module_tmcm_1276[0], STEPPING, max_acceleration, MAX_SPEED)
 
-    end_stop_sw_status(module_tmcm_1276[0])
+    for tmcm in module_tmcm_1276:
+        end_stop_sw_status(tmcm)
 
     if args[0].init:
         # module_tmcm_1276.rotate(350000)
@@ -616,8 +617,9 @@ def main(*args):
         # print(module_tmcm_1276.getActualVelocity(),module_tmcm_1276.getMaxVelocity())
         # print(time.time()-t)
 
-    if args[0].RFS_mode:
-        reference_search(module_tmcm_1276[0], args[0].RFS_mode, sw_telorance=0)
+    if args[0].rfs_mode:
+        for tmcm in module_tmcm_1276:
+            reference_search(tmcm, args[0].rfs_mode, sw_telorance=0)
 
     end_stop_sw_status(module_tmcm_1276[0])
     # **********************
