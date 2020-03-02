@@ -1,8 +1,4 @@
 {
-    "axis_2": {
-        "lenght": 836249
-    },
-    "axis_0": {
-        "lenght": 836249
-    }
+    "axis": 0,
+    "lenght": -24
 }

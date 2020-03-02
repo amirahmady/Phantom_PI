@@ -190,14 +190,18 @@ def parse_arguments():
         defaults = config['default']
     except KeyError:
         defaults = dict()
-
+    defaults=dict(defaults)
     output = {"pcan": "pcan_tmcl",
               "p": "pcan_tmcl",
               "socketcan": "socketcan_tmcl",
               "s": "socketcan_tmcl",
               }
-    parser.add_argument('-c', '--connection', dest='connection', choices=['socketcan', 'pcan'],
-                        help="use socketcan or pcan as connection", required=True, type=str)
+    if defaults.get("connection",False):
+        parser.add_argument('-c', '--connection', dest='connection', choices=['socketcan', 'pcan'],
+                        help="use socketcan or pcan as connection", required=False, type=str)
+    else:
+        parser.add_argument('-c', '--connection', dest='connection', choices=['socketcan', 'pcan'],
+                        help="use socketcan or pcan as connection", required=True, type=str)     
     parser.add_argument('-i', '--init', dest='init',
                         type=int, help='init movement')
     parser.add_argument('-r', '--RFS', dest='RFS_mode',
@@ -212,8 +216,10 @@ def parse_arguments():
                         help='number of extra axises follow by module-id, host-id, advance per turn(in) "1,1,2,0.04"')
     parser.add_argument('otherthings', nargs="*")
     args = parser.parse_args()
-
-    args.connection = output[args.connection]
+    try:
+        args.connection = output[args.connection]
+    except :
+        pass
 
     _args = vars(args)
     result = dict.fromkeys(_args)
@@ -222,6 +228,9 @@ def parse_arguments():
     result = {k: None if not v else v for k, v in result.items()}
     # Update if v is not None
     result.update({k: v for k, v in _args.items() if v is not None})
+    result['init']=int(result['init']) if result['init'] is not None else None
+    result['RFS_mode']=int(result['RFS_mode']) if result['RFS_mode'] is not None else None
+
     args = argparse.Namespace(**result)
     extra_axis(args)
     return args
@@ -275,12 +284,12 @@ def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0,
 
         with open(file_name) as json_file:
             data = json.load(json_file)
-        dictionary = {
-            "axis": axis,
-            "lenght": value
-        }
-        data.append(dictionary)
-        write_json(dictionary, file_name)
+            dictionary = {
+                "axis": axis,
+                "lenght": value
+            }
+            data.update(dictionary)
+            write_json(dictionary, file_name)
         return value
 
     # set_automatic_stop(module_tmcm_1276, all(end_stop_sw_status(module_tmcm_1276).values()))
@@ -598,8 +607,12 @@ def main(*args):
         # module_tmcm_1276.rotate(350000)
         # time.sleep(4)
         # t=time.time()
-        init_move_mm(module_tmcm_1276[0], args[0].init)
-        temp=input("Waiting for starting command")
+        try:
+            init_move_mm(module_tmcm_1276[0], int(args[0].init))
+        except TypeError:
+            print("init Type Error")
+        finally:
+            temp=input("Waiting for starting command")
         # print(module_tmcm_1276.getActualVelocity(),module_tmcm_1276.getMaxVelocity())
         # print(time.time()-t)
 
