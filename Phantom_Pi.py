@@ -11,6 +11,7 @@ import argparse
 import configparser
 import csv
 import json
+import multiprocessing
 import time
 from math import ceil
 
@@ -575,12 +576,7 @@ def main(*args):
     module_tmcm_1276 = list(range(number_of_axis))
     connection_manager = list(range(number_of_axis))
     my_interface = list(range(number_of_axis))
-    # connection_manager.append(ConnectionManager(argList=['--interface', args[0].connection, '--module-id',
-    #                 args[0].module_id, '--host-id', args[0].host_id]))  # '--host-id',"4","--module-id","3")
 
-    # my_interface.append(connection_manager[0].connect())
-    # module_tmcm_1276.append(TMCM_1276A(my_interface[0],args[0].adpt))
-    # if args[0].extra_axises:
     for idx, val in enumerate(axis_param):
             connection_manager[idx]=ConnectionManager(argList = ['--interface', args[0].connection, '--module-id',
                      str(val[0]), '--host-id', str(val[1])])
@@ -594,7 +590,6 @@ def main(*args):
     print("Warning if motor is not around postion zero it will go there automaticly")
     max_acceleration=int(MAX_SPEED*1.2)
     print(max_acceleration)
-    default_motor=0
     global lead
     lead=module_tmcm_1276[0].lead_per_pulse(256, 'in')
     lead=lead_per_pulse(256, 0.40, 'in')
@@ -637,7 +632,7 @@ def main(*args):
     # while True:
     #     end_stop_status(module_tmcm_1276)
     # movement_log = general_move(module_tmcm_1276)
-    # movement_log = velocity_movement(        module_tmcm_1276[0], lead, filename="sin_taj.csv")
+    #movement_log = velocity_movement(        module_tmcm_1276[0], lead, filename="sin_taj.csv")
 
     module_tmcm_1276[0].stop()
     time.sleep(.5)
@@ -648,8 +643,9 @@ def main(*args):
     print_position(module_tmcm_1276[0])
     # write_log(movement_log)
     my_interface[0].close()
-    for idx in range(len(my_interface)):
-        my_interface[idx].close()
+    
+    for interface in my_interface:
+    interface.close()
 
 
 if __name__ == "__main__":

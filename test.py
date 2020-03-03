@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import math
 class Person:
   def __init__(self, fname, lname):
     self.firstname = fname
@@ -18,9 +18,10 @@ class Student(Person):
         return self.t
 
 
+ordinal = lambda n: "%d%s" % (n,"tsnrhtdd"[(math.floor(n/10)%10!=1)*(n%10<4)*n%10::4])
+print(ordinal(2))
 
-
-x = Student("Mike", "Olsen")
+""" x = Student("Mike", "Olsen")
 x.graduationyear=10
 print(x.calc(4))
-print(x.t)
+print(x.t) """
