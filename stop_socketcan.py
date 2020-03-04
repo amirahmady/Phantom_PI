@@ -12,6 +12,8 @@ import math
 import PyTrinamic
 from PyTrinamic.connections.ConnectionManager import ConnectionManager
 from PyTrinamic.modules.TMCM_1276 import TMCM_1276
+from Phantom_Pi import end_stop_sw_status
+from Phantom_Pi import set_automatic_stop
 
 ordinal = lambda n: "%d%s" % (n,"tsnrhtdd"[(math.floor(n/10)%10!=1)*(n%10<4)*n%10::4])
 
@@ -20,8 +22,10 @@ def movment(TMCM, speed, duriation):
     TMCM.rotate(speed)
     time.sleep(duriation)
     TMCM.stop()
+    for tmcm in module_tmcm_1276:
+        set_automatic_stop(tmcm, False)
     print('ri:', TMCM.getGlobalParameter(71, 0),
-          'stoped @:', time.localtime().tm_sec, 'sec')
+        'stoped @:', time.localtime().tm_sec, 'sec')
 
 
 my_interface = [None, None]
@@ -61,21 +65,29 @@ for tmcm in module_tmcm_1276:
     tmcm.stop()
     del tmcm
 
+""" while True:
+    for tmcm in module_tmcm_1276:
+       end_sw_status=  end_stop_sw_status(tmcm)
+       print(tmcm.getGlobalParameter(71, 0),": ",end_sw_status)
+    if any(end_sw_status.values()):
+        time.sleep(.5) """
+
+
 temp = input("Enter for test movment, any other input for End: ")
 if temp.lower() == 'end' or not temp=='':
     print('Program Terminated.')
     raise SystemExit
 print("Rotating")
-p = []
-p.append(multiprocessing.Process(target=movment,
-                                 args=(module_tmcm_1276[0], -20000, 4,)))
-p.append(multiprocessing.Process(target=movment,
-                                 args=(module_tmcm_1276[1], 51000, 2,)))
+cmd = []
+cmd.append(multiprocessing.Process(target=movment,
+                                 args=(module_tmcm_1276[0], 30000, 4,)))
+cmd.append(multiprocessing.Process(target=movment,
+                                 args=(module_tmcm_1276[1], -151000, 2,)))
 
-for item in p:
+for item in cmd:
     item.start()
 
-for item in p:
+for item in cmd:
     item.join()
 
 

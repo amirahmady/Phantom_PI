@@ -15,6 +15,7 @@ import multiprocessing
 import time
 from math import ceil
 
+from typing import Callable,Any
 import PyTrinamic
 from PyTrinamic.connections.ConnectionManager import ConnectionManager
 from PyTrinamic.modules.TMCM_1276 import TMCM_1276
@@ -298,11 +299,12 @@ def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0,
         print("Something is wrong in wiring")
         raise IOError
     elif not any(end_sw_status.values()):
+        # find both side
         rep = right_end_position()
         # print(rep)
         lep = left_end_position()
         # print(lep)
-        # TODO: find both side
+        
 
     elif end_sw_status['R']:
         # TODO: find left side
@@ -320,7 +322,7 @@ def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0,
     # set_position(module_tmcm_1276, position_zero(rep=rep,lep=lep))
     # print("ap is: ", module_tmcm_1276.getActualPosition())
     move_to_pp(module_tmcm_1276, position_zero(
-        rep=rep, lep=lep, axis=axis), int(MAX_SPEED/6))
+        rep=rep, lep=lep, axis=axis), int(MAX_SPEED/4))
     set_position(module_tmcm_1276, 0)
     print("RSF done, Moved to Zero")
 
@@ -599,6 +601,8 @@ def main(*args):
     for tmcm in module_tmcm_1276:
         end_stop_sw_status(tmcm)
 
+    
+
     if args[0].init:
         # module_tmcm_1276.rotate(350000)
         # time.sleep(4)
@@ -613,10 +617,8 @@ def main(*args):
         # print(time.time()-t)
 
     if args[0].rfs_mode:
-        for tmcm in module_tmcm_1276:
-            reference_search(tmcm, args[0].rfs_mode, sw_telorance=0)
-
-    end_stop_sw_status(module_tmcm_1276[0])
+        multi_process(module_tmcm_1276, reference_search, [args[0].rfs_mode])
+        print("RFS is done.")
     # **********************
     print("Current position is:", module_tmcm_1276[0].getActualPosition())
     end_stop_sw_status(module_tmcm_1276[0])
@@ -628,13 +630,15 @@ def main(*args):
     # module_tmcm_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
     print_position(module_tmcm_1276[0])
     print("trajectory is loading")
-    set_automatic_stop(module_tmcm_1276[0], False)
+    for tmcm in module_tmcm_1276:
+        set_automatic_stop(tmcm, False)
     # while True:
     #     end_stop_status(module_tmcm_1276)
     # movement_log = general_move(module_tmcm_1276)
     #movement_log = velocity_movement(        module_tmcm_1276[0], lead, filename="sin_taj.csv")
 
-    module_tmcm_1276[0].stop()
+    for tmcm in module_tmcm_1276:
+        tmcm.stop()
     time.sleep(.5)
     print_position(module_tmcm_1276[0])
     module_tmcm_1276[0].setMaxAcceleration(MAX_SPEED)
@@ -642,10 +646,21 @@ def main(*args):
 
     print_position(module_tmcm_1276[0])
     # write_log(movement_log)
-    my_interface[0].close()
     
     for interface in my_interface:
-    interface.close()
+        interface.close()
+
+def multi_process(module_tmcm_1276,func_name:Callable[..., Any],func_args:list ):
+    cmd = []
+    _func_args=[]
+    for tmcm in module_tmcm_1276:
+        _func_args=[tmcm]+func_args
+        cmd.append(multiprocessing.Process(target=func_name,
+                            args=_func_args))
+    for item in cmd:
+        item.start()
+    for item in cmd:
+        item.join()
 
 
 if __name__ == "__main__":
