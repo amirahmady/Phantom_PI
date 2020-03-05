@@ -12,10 +12,11 @@ import configparser
 import csv
 import json
 import multiprocessing
+import sys
 import time
 from math import ceil
+from typing import Any, Callable
 
-from typing import Callable,Any
 import PyTrinamic
 from PyTrinamic.connections.ConnectionManager import ConnectionManager
 from PyTrinamic.modules.TMCM_1276 import TMCM_1276
@@ -27,15 +28,20 @@ from sine_wave import Sine_Wave
 class TMCM_1276A(TMCM_1276):
     def __init__(self, connection, adpt: float):
         super().__init__(connection)
-        self.lead = 0
         self.adpt = float(adpt)  # advance_per_turn
+        try:
+            self.axisId = super().getGlobalParameter(71, 0)
+        except:
+            pass
+        self.lead = self.lead_per_pulse(256)
 
     def lead_per_pulse(self, stepping, unit='in'):
         """
             return in mm
         """
         if unit.lower() == 'in':
-            lead = (self.adpt * 25.4) / (200 * stepping)  # 200 is stepper deg
+            lead = (1 * self.adpt * 25.4) / \
+                (200 * stepping)  # 200 is stepper deg
         else:
             lead = 1
             pass
@@ -71,8 +77,9 @@ def load_motion_data(filename, delimiter='\t'):
 
 def lead_per_pulse(stepping, advance_per_turn, unit='in'):
     if unit.lower() == 'in':
+        # 25.4 is mm
         lead = (advance_per_turn * 25.4) / \
-                (200 * stepping)  # 200 is stepper deg
+            (200 * stepping)  # 200 is stepper deg
     else:
         lead = 1
         pass
@@ -96,7 +103,7 @@ def pulse_to_unit(pp, lead=lead):
 def move_back_zoro(module_tmcm_1276, speed=153600):
     # print("current position is:", module_tmcm_1276.getActualPosition())
     # print("Moving back to 0")
-    pos = 51200
+    pos = sys.maxint
     while pos > 20:
         pos = module_tmcm_1276.getActualPosition()
         move_to_pp(module_tmcm_1276, 0, speed)
@@ -192,18 +199,18 @@ def parse_arguments():
         defaults = config['default']
     except KeyError:
         defaults = dict()
-    defaults=dict(defaults)
+    defaults = dict(defaults)
     output = {"pcan": "pcan_tmcl",
               "p": "pcan_tmcl",
               "socketcan": "socketcan_tmcl",
               "s": "socketcan_tmcl",
               }
-    if defaults.get("connection",False):
+    if defaults.get("connection", False):
         parser.add_argument('-c', '--connection', dest='connection', choices=['socketcan', 'pcan'],
-                        help="use socketcan or pcan as connection", required=False, type=str)
+                            help="use socketcan or pcan as connection", required=False, type=str)
     else:
         parser.add_argument('-c', '--connection', dest='connection', choices=['socketcan', 'pcan'],
-                        help="use socketcan or pcan as connection", required=True, type=str)     
+                            help="use socketcan or pcan as connection", required=True, type=str)
     parser.add_argument('-i', '--init', dest='init',
                         type=int, help='init movement')
     parser.add_argument('-r', '--RFS', dest='rfs_mode',
@@ -220,7 +227,7 @@ def parse_arguments():
     args = parser.parse_args()
     try:
         args.connection = output[args.connection]
-    except :
+    except:
         pass
 
     _args = vars(args)
@@ -230,8 +237,10 @@ def parse_arguments():
     result = {k: None if not v else v for k, v in result.items()}
     # Update if v is not None
     result.update({k: v for k, v in _args.items() if v is not None})
-    result['init']=int(result['init']) if result['init'] is not None else None
-    result['rfs_mode']=int(result['rfs_mode']) if result['rfs_mode'] is not None else None
+    result['init'] = int(
+        result['init']) if result['init'] is not None else None
+    result['rfs_mode'] = int(
+        result['rfs_mode']) if result['rfs_mode'] is not None else None
 
     args = argparse.Namespace(**result)
     extra_axis(args)
@@ -304,7 +313,6 @@ def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0,
         # print(rep)
         lep = left_end_position()
         # print(lep)
-        
 
     elif end_sw_status['R']:
         # TODO: find left side
@@ -481,6 +489,7 @@ def motor_init(module_tmcm_1276, stepping=8, max_acceleration=300000, max_speed=
     module_tmcm_1276.setMaxAcceleration(max_acceleration)
     module_tmcm_1276.setMaxVelocity(max_speed)
     set_switch_Polarity(module_tmcm_1276, 0)
+    # MicroStep 8 =256
     module_tmcm_1276.setAxisParameter(
         module_tmcm_1276.APs.MicrostepResolution, stepping)
     module_tmcm_1276.setAxisParameter(21, 0)
@@ -504,8 +513,9 @@ def motor_init(module_tmcm_1276, stepping=8, max_acceleration=300000, max_speed=
         print(name, ': ', module_tmcm_1276.getAxisParameter(item))
 
 
-def init_move_mm(module_tmcm_1276, lead=lead, move=None):
+def init_move_mm(module_tmcm_1276, move=None, lead=lead):
     init_move = move if move else int(input("desire init move by : "))
+    lead = module_tmcm_1276.lead if lead == 0 else lead
     print("pulse", unit_to_pulse(init_move, lead))
     set_automatic_stop(module_tmcm_1276, False)
     move_by_unit(module_tmcm_1276, init_move, lead=lead)
@@ -560,6 +570,7 @@ def velocity_movement(module_tmcm_1276, lead, filename="sin_taj.csv"):
         module_tmcm_1276.stop()
     return movement_log
 
+
 class axis(object):
     def __init__(self):
         super().__init__()
@@ -569,52 +580,56 @@ class axis(object):
         self.unit
 
 
-
 def main(*args):
     PyTrinamic.showInfo()
-    axis_param= [[args[0].module_id, args[0].host_id, args[0].adpt]]
-    axis_param = axis_param if args[0].extra_axises is None else axis_param+args[0].extra_axises
-    number_of_axis= len(axis_param)
+    max_acceleration = int(MAX_SPEED*1.2)
+
+    axis_param = [[args[0].module_id, args[0].host_id, args[0].adpt]]
+    axis_param = axis_param if args[0].extra_axises is None else axis_param + \
+        args[0].extra_axises
+    number_of_axis = len(axis_param)
     module_tmcm_1276 = list(range(number_of_axis))
     connection_manager = list(range(number_of_axis))
     my_interface = list(range(number_of_axis))
 
-    for idx, val in enumerate(axis_param):
-            connection_manager[idx]=ConnectionManager(argList = ['--interface', args[0].connection, '--module-id',
-                     str(val[0]), '--host-id', str(val[1])])
-            my_interface[idx]=connection_manager[idx].connect()
-            module_tmcm_1276[idx]=(TMCM_1276A(my_interface[idx], val[2]))
-            module_tmcm_1276[idx].stop()
-
-
-
+    try:
+        C_Error=Exception()
+        for idx, val in enumerate(axis_param):
+            try:
+                connection_manager[idx] = ConnectionManager(argList=['--interface', args[0].connection, '--module-id',
+                                                                    str(val[0]), '--host-id', str(val[1])])
+                my_interface[idx] = connection_manager[idx].connect()
+                module_tmcm_1276[idx] = (TMCM_1276A(my_interface[idx], val[2]))
+                module_tmcm_1276[idx].stop()
+            except ConnectionError as e:        
+                
+                err='\n{0} for module #{1}.\nPlease check connection and powerline on that Motor.\n'.format(
+                    e, module_tmcm_1276[idx].connection._MODULE_ID)
+                print(err)
+                C_Error.args=err
+    except:
+        raise ConnectionError
 
     print("Warning if motor is not around postion zero it will go there automaticly")
-    max_acceleration=int(MAX_SPEED*1.2)
-    print(max_acceleration)
-    global lead
-    lead=module_tmcm_1276[0].lead_per_pulse(256, 'in')
-    lead=lead_per_pulse(256, 0.40, 'in')
 
-    motor_init(module_tmcm_1276[0], STEPPING, max_acceleration, MAX_SPEED)
+    # print(max_acceleration)
+    #global lead
+    #lead=module_tmcm_1276[0].lead_per_pulse(256, 'in')
+    #lead=lead_per_pulse(256, 0.40, 'in')
 
     for tmcm in module_tmcm_1276:
+        motor_init(tmcm, STEPPING, max_acceleration, MAX_SPEED)
         end_stop_sw_status(tmcm)
 
-    
-
     if args[0].init:
-        # module_tmcm_1276.rotate(350000)
-        # time.sleep(4)
-        # t=time.time()
+
         try:
-            init_move_mm(module_tmcm_1276[0], int(args[0].init))
+            multi_process(module_tmcm_1276, init_move_mm, [int(args[0].init)])
+            #init_move_mm(module_tmcm_1276[0], int(args[0].init))
         except TypeError:
             print("init Type Error")
         finally:
-            temp=input("Waiting for starting command")
-        # print(module_tmcm_1276.getActualVelocity(),module_tmcm_1276.getMaxVelocity())
-        # print(time.time()-t)
+            temp = input("Waiting for starting command")
 
     if args[0].rfs_mode:
         multi_process(module_tmcm_1276, reference_search, [args[0].rfs_mode])
@@ -625,7 +640,7 @@ def main(*args):
     set_automatic_stop(module_tmcm_1276[0], False)
     move_back_zoro(module_tmcm_1276[0])
     # module_tmcm_1276.rotate(-300000)
-    temp=input("Waiting for starting command")
+    temp = input("Waiting for starting command")
     # test(module_tmcm_1276,3)
     # module_tmcm_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
     print_position(module_tmcm_1276[0])
@@ -639,24 +654,29 @@ def main(*args):
 
     for tmcm in module_tmcm_1276:
         tmcm.stop()
-    time.sleep(.5)
-    print_position(module_tmcm_1276[0])
-    module_tmcm_1276[0].setMaxAcceleration(MAX_SPEED)
-    move_back_zoro(module_tmcm_1276[0], MAX_SPEED)
 
-    print_position(module_tmcm_1276[0])
+    time.sleep(.5)
+
+    for tmcm in module_tmcm_1276:
+        print_position(tmcm.axisId, tmcm)
+        module_tmcm_1276[0].setMaxAcceleration(MAX_SPEED)
+    multi_process(module_tmcm_1276, move_back_zoro, [MAX_SPEED])
+    for tmcm in module_tmcm_1276:
+        print_position(tmcm.axisId, tmcm)
+
     # write_log(movement_log)
-    
+
     for interface in my_interface:
         interface.close()
 
-def multi_process(module_tmcm_1276,func_name:Callable[..., Any],func_args:list ):
+
+def multi_process(module_tmcm_1276, func_name: Callable[..., Any], func_args: list):
     cmd = []
-    _func_args=[]
+    _func_args = []
     for tmcm in module_tmcm_1276:
-        _func_args=[tmcm]+func_args
+        _func_args = [tmcm]+func_args
         cmd.append(multiprocessing.Process(target=func_name,
-                            args=_func_args))
+                                           args=_func_args))
     for item in cmd:
         item.start()
     for item in cmd:
@@ -664,5 +684,5 @@ def multi_process(module_tmcm_1276,func_name:Callable[..., Any],func_args:list )
 
 
 if __name__ == "__main__":
-    arguments=parse_arguments()
+    arguments = parse_arguments()
     main(arguments)

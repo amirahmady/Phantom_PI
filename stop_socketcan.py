@@ -17,6 +17,20 @@ from Phantom_Pi import set_automatic_stop
 
 ordinal = lambda n: "%d%s" % (n,"tsnrhtdd"[(math.floor(n/10)%10!=1)*(n%10<4)*n%10::4])
 
+def move_by_pp(module_tmcm_1276, position: int) -> bool:
+    """
+    This function move stepper motor by desired Unit(pp)
+    :param module_tmcm_1276:
+    :param position:
+    :param unit:
+    :return:
+    """
+    # print(unit_to_pulse(position))
+    module_tmcm_1276.moveBy(position)
+    module_tmcm_1276.getAxisParameter(module_tmcm_1276.APs.ActualPosition)
+    while not (module_tmcm_1276.positionReached()):
+        pass
+    return True
 
 def movment(TMCM, speed, duriation):
     TMCM.rotate(speed)
@@ -43,8 +57,15 @@ connection_manager[1] = ConnectionManager(
 my_interface[1] = connection_manager[1].connect()
 module_tmcm_1276[1] = TMCM_1276(my_interface[1])
 
-module_tmcm_1276[1].stop()
-module_tmcm_1276[0].stop()
+for tmcm in module_tmcm_1276:
+    try:
+        tmcm.stop()
+    except ConnectionError as e:
+        print('\n{0} for module #{1}.\nPlease check connection and powerline on that Motor.\n'.format(e,tmcm.connection._MODULE_ID))
+
+
+
+
 
 
 print("Preparing parameters")
@@ -77,6 +98,14 @@ temp = input("Enter for test movment, any other input for End: ")
 if temp.lower() == 'end' or not temp=='':
     print('Program Terminated.')
     raise SystemExit
+
+print("moving 10 mm")
+
+move_by_pp(module_tmcm_1276[0],-50394)
+move_by_pp(module_tmcm_1276[1],-201575)
+temp = input("Enter for test movment, any other input for End: ")
+
+
 print("Rotating")
 cmd = []
 cmd.append(multiprocessing.Process(target=movment,
