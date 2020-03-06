@@ -2,7 +2,7 @@
 import numpy as np
 
 
-def derivative(f, a, method='central', h=0.01):
+def derivative(f, a, method='central', h=0.0001):
     '''Compute the difference formula for f'(a) with step size h.
 
     Parameters
@@ -56,9 +56,9 @@ def calculate_motion(position: list, Fs: int = 50, duration: float = 0, time_ser
 
 
 def main():
-    x = np.random.randint(low=1, high=100, size=5)
+    x = np.random.randint(low=1, high=100, size=10)
     v, a = calculate_motion(x)
-    print(v, a)
+    print(v, a.astype(int))
 
 
 if __name__ == "__main__":

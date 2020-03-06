@@ -17,11 +17,13 @@ import time
 from math import ceil
 from typing import Any, Callable
 
+import numpy as np
 import PyTrinamic
 from PyTrinamic.connections.ConnectionManager import ConnectionManager
 from PyTrinamic.modules.TMCM_1276 import TMCM_1276
 
 from constant import *
+from generate_motion import calculate_motion
 from sine_wave import Sine_Wave
 
 
@@ -48,6 +50,19 @@ class TMCM_1276A(TMCM_1276):
         self.lead = lead
         return lead
 
+class Connection_Error(ConnectionError):
+    def __init__(self, *args):
+        if args:
+            self.message = args[0]
+        else:
+            self.message = None
+        self._state = False
+
+    def __str__(self):
+        if self.message:
+            return 'Connection_Error, {0} '.format(self.message)
+        else:
+            return 'Connection_Error has been raised'
 
 def read_csv_file(filename="trajectory.csv", delimiter='\t', skip_header=False):
     with open(filename) as trajectory_file:
@@ -75,7 +90,7 @@ def load_motion_data(filename, delimiter='\t'):
     return x, v, a
 
 
-def lead_per_pulse(stepping, advance_per_turn, unit='in'):
+def lead_per_pulse(stepping:int, advance_per_turn:float, unit='in'):
     if unit.lower() == 'in':
         # 25.4 is mm
         lead = (advance_per_turn * 25.4) / \
@@ -86,7 +101,7 @@ def lead_per_pulse(stepping, advance_per_turn, unit='in'):
     return lead
 
 
-def unit_to_pulse(mm, lead: float) -> int:
+def unit_to_pulse(mm:float, lead: float) -> int:
     try:
         return ceil(mm / lead)
     except ZeroDivisionError:
@@ -95,7 +110,7 @@ def unit_to_pulse(mm, lead: float) -> int:
         # lead = lead_per_pulse(256,)
 
 
-def pulse_to_unit(pp, lead=lead):
+def pulse_to_unit(pp:int, lead:float):
     pp = -(MAX_RANGE-pp) if pp > 2147483647 else pp
     return round(pp*lead, 5)
 
@@ -103,7 +118,7 @@ def pulse_to_unit(pp, lead=lead):
 def move_back_zoro(module_tmcm_1276, speed=153600):
     # print("current position is:", module_tmcm_1276.getActualPosition())
     # print("Moving back to 0")
-    pos = sys.maxint
+    pos = sys.maxsize
     while pos > 20:
         pos = module_tmcm_1276.getActualPosition()
         move_to_pp(module_tmcm_1276, 0, speed)
@@ -111,7 +126,7 @@ def move_back_zoro(module_tmcm_1276, speed=153600):
     # print("Reached Position 0")
 
 
-def move_by_unit(module_tmcm_1276, position: float, lead=lead, unit='SI') -> bool:
+def move_by_unit(module_tmcm_1276, position: float, lead:float, unit='SI') -> bool:
     """
     This function move stepper motor by desired Unit(SI "mm" or Imperial "inch")
     :param module_tmcm_1276:
@@ -251,6 +266,7 @@ def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0,
     # TODO: set left and right position and define zero in regrading the mode
     # TODO: find right end
     # zero_telorance = int(unit_to_pulse(2))
+    lead=module_tmcm_1276.lead
     set_switch_Polarity(module_tmcm_1276, 0)
     zero_telorance = unit_to_pulse(sw_telorance, lead)
     soft_stop_toggle(module_tmcm_1276, False)
@@ -327,8 +343,6 @@ def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0,
         rep = right_end_position()
         pass
 
-    # set_position(module_tmcm_1276, position_zero(rep=rep,lep=lep))
-    # print("ap is: ", module_tmcm_1276.getActualPosition())
     move_to_pp(module_tmcm_1276, position_zero(
         rep=rep, lep=lep, axis=axis), int(MAX_SPEED/4))
     set_position(module_tmcm_1276, 0)
@@ -350,13 +364,7 @@ def set_position(module_tmcm_1276, position=0):
         pass
     print("Position set to: ", module_tmcm_1276.getActualPosition())
 
-    # module_tmcm_1276.setAxisParameter(196,left_end_position)
-    # print("ap 196 value:", module_tmcm_1276.getAxisParameter(196))
 
-    # module_tmcm_1276.setAxisParameter(module_tmcm_1276.APs.AutomaticRightStop, 0)
-    # module_tmcm_1276.moveBy(100)
-    # module_tmcm_1276.setActualPosition(0)
-    # module_tmcm_1276.moveBy()
 
 
 def test(module_tmcm_1276, mode=3, state=True):
@@ -407,9 +415,8 @@ def set_automatic_stop(module_tmcm_1276, state: bool) -> bool:
             module_tmcm_1276.APs.AutomaticLeftStop)
         out = {'R': right, 'L':
                left}
-        print("Auto Stop Mode", out)
+        #print("Auto Stop Mode", out)
         return state
-
     set_switch_Polarity(module_tmcm_1276, value=0)
 
 
@@ -442,6 +449,7 @@ def soft_stop_toggle(module_tmcm_1276, toggle=True) -> bool:
 
 def print_position(module_tmcm_1276, display=True):
     pos_pps = module_tmcm_1276.getActualPosition()
+    lead=module_tmcm_1276.lead
     pos_mm = pulse_to_unit(pos_pps, lead)
     print("PS: ", pos_pps, " mm :", pos_mm, 'lead:', lead)
     return(pos_pps, pos_mm)
@@ -467,15 +475,15 @@ def general_move(module_tmcm_1276, iteration=2):
     return print_position(module_tmcm_1276, display=False)
 
 
-def run_trajectory(module_tmcm_1276, trajectory_data):
-    start = time.time()
-    for item in trajectory_data:
-        start = time.time()
-        print(item)
-        move_to_unit(module_tmcm_1276, item*10)
-        time_diff = time.time() - start
-        if time_diff < 0.02:
-            time.sleep(.02 - time_diff)
+# def run_trajectory(module_tmcm_1276, trajectory_data):
+#     start = time.time()
+#     for item in trajectory_data:
+#         start = time.time()
+#         print(item)
+#         move_to_unit(module_tmcm_1276, item*10)
+#         time_diff = time.time() - start
+#         if time_diff < 0.02:
+#             time.sleep(.02 - time_diff)
 
 
 def motor_init(module_tmcm_1276, stepping=8, max_acceleration=300000, max_speed=300000):
@@ -513,7 +521,7 @@ def motor_init(module_tmcm_1276, stepping=8, max_acceleration=300000, max_speed=
         print(name, ': ', module_tmcm_1276.getAxisParameter(item))
 
 
-def init_move_mm(module_tmcm_1276, move=None, lead=lead):
+def init_move_mm(module_tmcm_1276, move=None, lead:float=0):
     init_move = move if move else int(input("desire init move by : "))
     lead = module_tmcm_1276.lead if lead == 0 else lead
     print("pulse", unit_to_pulse(init_move, lead))
@@ -522,44 +530,57 @@ def init_move_mm(module_tmcm_1276, move=None, lead=lead):
     print("Init move finished.")
 
 
-def write_log(movement_log):
+def write_log(movement_log,lead):
     for item in movement_log:
-        item[2] = pulse_to_unit(item[2])
+        item[2] = pulse_to_unit(item[2],lead)
         item[3] = -(MAX_RANGE-item[3]) if item[3] > 2147483647 else item[3]
     with open('log_file.csv', mode='w') as log_file:
         log_writer = csv.writer(log_file, delimiter=',')
         log_writer.writerows(movement_log)
 
 
-def velocity_movement(module_tmcm_1276, lead, filename="sin_taj.csv"):
-
-    Hz = 50
-
-    def get_velocity_pram(v, a):
-        max_v = max(v) if abs(max(v)) >= abs(min(v)) else abs(min(v))
-        v = v[::21]  # .02 values
-        a = a[::21]  # .02 values
-        v[:] = [ceil(3*c*item/4) for item in v]
-        a[:] = [ceil(3*c*item/4) for item in a]
-        return max_v, v, a
+def velocity_movement(module_tmcm_1276,data_source,enable_log=False,sample_rate=50,over_data=False):
+    # TODO: Over X ?
+    lead = module_tmcm_1276.lead
+    def get_velocity_pram(v, a,step):
+        # TODO: do calculatio regarding the Hz and sampling
+        
+        v = v[::step]  # .02 values
+        a = a[::step]  # .02 values
+        #v[:] = [np.rint(3*c*item/4) for item in v]
+        #a[:] = [np.rint(3*c*item/4) for item in a]
+        v[:] = [ceil(c*item) for item in v]
+        a[:] = [ceil(c*item) for item in a]
+        max_v = abs(max(v.min(), v.max(), key=abs))
+        return max_v,v,a
 
     c = unit_to_pulse(1, lead)
-    x, v, a = load_motion_data(filename, ',')
-    max_v, v, a = get_velocity_pram(v, a)
+    if type(data_source) == str:
+        x, v, a = load_motion_data(data_source, ',')
+    elif type(data_source) == tuple:
+        x,v,a = data_source
+    else:
+        raise NotImplementedError
 
+    if over_data :
+        step=21 #TODO: why 21 make it dynamic
+        max_v, v, a = get_velocity_pram(v, a,step)
+    else: 
+        max_v, v, a = get_velocity_pram(v, a,1)
+
+    v, a = v.astype(int), a.astype(int)
     if c*max_v > 300000:
         print("Over speed:", c*max_v)
-        raise Exception
+        #raise Exception
     module_tmcm_1276.setMaxVelocity(MAX_SPEED)
     i = 0
     movement_log = []
-    while i < 4:
+    while i < 1:
         module_tmcm_1276.stop()
-        for item, a_item in zip(v, a):
-            module_tmcm_1276.setMaxAcceleration(a_item)
-            module_tmcm_1276.rotate(item)
+        for v_item, a_item in zip(v, a):
+            module_tmcm_1276.setMaxAcceleration(int(a_item))
+            module_tmcm_1276.rotate(int(v_item))
             time.sleep(.02)
-        # module_tmcm_1276.stop()
         i += 1
         print(i)
         print_position(module_tmcm_1276)
@@ -571,13 +592,6 @@ def velocity_movement(module_tmcm_1276, lead, filename="sin_taj.csv"):
     return movement_log
 
 
-class axis(object):
-    def __init__(self):
-        super().__init__()
-        self.length
-        self.number_of_SB
-        self.adpt
-        self.unit
 
 
 def main(*args):
@@ -592,30 +606,29 @@ def main(*args):
     connection_manager = list(range(number_of_axis))
     my_interface = list(range(number_of_axis))
 
-    try:
-        C_Error=Exception()
-        for idx, val in enumerate(axis_param):
-            try:
-                connection_manager[idx] = ConnectionManager(argList=['--interface', args[0].connection, '--module-id',
-                                                                    str(val[0]), '--host-id', str(val[1])])
-                my_interface[idx] = connection_manager[idx].connect()
-                module_tmcm_1276[idx] = (TMCM_1276A(my_interface[idx], val[2]))
-                module_tmcm_1276[idx].stop()
-            except ConnectionError as e:        
-                
-                err='\n{0} for module #{1}.\nPlease check connection and powerline on that Motor.\n'.format(
-                    e, module_tmcm_1276[idx].connection._MODULE_ID)
-                print(err)
-                C_Error.args=err
-    except:
-        raise ConnectionError
+
+    C_Error = Connection_Error("")
+    for idx, val in enumerate(axis_param):
+        try:
+            connection_manager[idx] = ConnectionManager(argList=['--interface', args[0].connection, '--module-id',
+                                                                str(val[0]), '--host-id', str(val[1])])
+            my_interface[idx] = connection_manager[idx].connect()
+            module_tmcm_1276[idx] = (TMCM_1276A(my_interface[idx], val[2]))
+            module_tmcm_1276[idx].stop()
+        except ConnectionError as e:        
+            
+            err='\n{0} for module #{1}.\nPlease check connection and powerline on that Motor.\n'.format(
+                e, module_tmcm_1276[idx].connection._MODULE_ID)
+            print(err)
+            C_Error.message=C_Error.message+err
+            C_Error._state= True
+    if  C_Error._state: raise C_Error
+
+
 
     print("Warning if motor is not around postion zero it will go there automaticly")
 
-    # print(max_acceleration)
-    #global lead
-    #lead=module_tmcm_1276[0].lead_per_pulse(256, 'in')
-    #lead=lead_per_pulse(256, 0.40, 'in')
+
 
     for tmcm in module_tmcm_1276:
         motor_init(tmcm, STEPPING, max_acceleration, MAX_SPEED)
@@ -647,6 +660,15 @@ def main(*args):
     print("trajectory is loading")
     for tmcm in module_tmcm_1276:
         set_automatic_stop(tmcm, False)
+    
+    motion=list(range(number_of_axis))
+    motion[0]=np.array(selecting_column(read_csv_file("complete.csv",'\t',False),0))
+    motion[1]=np.array(selecting_column(read_csv_file("complete.csv",'\t',False),2))
+    motion[0]=calc_motion(motion[0],"x-axis.csv")# *10 :converting cm to mm
+    motion[1]=calc_motion(motion[1],"z-axis.csv")
+    
+    for idx, _motion in enumerate(motion):
+        velocity_movement(module_tmcm_1276[idx],motion[idx])
     # while True:
     #     end_stop_status(module_tmcm_1276)
     # movement_log = general_move(module_tmcm_1276)
@@ -658,17 +680,25 @@ def main(*args):
     time.sleep(.5)
 
     for tmcm in module_tmcm_1276:
-        print_position(tmcm.axisId, tmcm)
-        module_tmcm_1276[0].setMaxAcceleration(MAX_SPEED)
+        print_position(tmcm)
+        tmcm.setMaxAcceleration(MAX_SPEED)
     multi_process(module_tmcm_1276, move_back_zoro, [MAX_SPEED])
     for tmcm in module_tmcm_1276:
-        print_position(tmcm.axisId, tmcm)
+        print_position(tmcm)
 
     # write_log(movement_log)
 
     for interface in my_interface:
         interface.close()
 
+def calc_motion(x,output_file:str=None):
+    v ,a =  calculate_motion(x)
+    if output_file is not None:
+        with open('output_file', mode='w') as log_file:
+            log_writer = csv.writer(log_file, delimiter=',')
+            log_writer.writerow(["x","v","a"])
+            log_writer.writerows([x, v ,a])
+    return x,v,a
 
 def multi_process(module_tmcm_1276, func_name: Callable[..., Any], func_args: list):
     cmd = []
