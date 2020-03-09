@@ -15,7 +15,7 @@ import multiprocessing
 import sys
 import time
 from math import ceil
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 
 import numpy as np
 import PyTrinamic
@@ -346,7 +346,8 @@ def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0,
     move_to_pp(module_tmcm_1276, position_zero(
         rep=rep, lep=lep, axis=axis), int(MAX_SPEED/4))
     set_position(module_tmcm_1276, 0)
-    print("RSF done, Moved to Zero")
+    move_back_zoro(module_tmcm_1276)
+    print('ri:', TMCM.getGlobalParameter(71, 0),"RSF has done, Moved to Zero")
 
     return True
 
@@ -451,7 +452,8 @@ def print_position(module_tmcm_1276, display=True):
     pos_pps = module_tmcm_1276.getActualPosition()
     lead=module_tmcm_1276.lead
     pos_mm = pulse_to_unit(pos_pps, lead)
-    print("PS: ", pos_pps, " mm :", pos_mm, 'lead:', lead)
+    print('RI:', module_tmcm_1276.getGlobalParameter(71, 0))
+    print("     PS: ", pos_pps, " mm :", pos_mm, 'lead:', lead)
     return(pos_pps, pos_mm)
 
 
@@ -539,7 +541,7 @@ def write_log(movement_log,lead):
         log_writer.writerows(movement_log)
 
 
-def velocity_movement(module_tmcm_1276,data_source,enable_log=False,sample_rate=50,over_data=False):
+def velocity_movement(module_tmcm_1276,data_source,enable_log=False,sample_rate=50,over_data=False,loop_number=1):
     # TODO: Over X ?
     lead = module_tmcm_1276.lead
     def get_velocity_pram(v, a,step):
@@ -551,7 +553,8 @@ def velocity_movement(module_tmcm_1276,data_source,enable_log=False,sample_rate=
         #a[:] = [np.rint(3*c*item/4) for item in a]
         v[:] = [ceil(c*item) for item in v]
         a[:] = [ceil(c*item) for item in a]
-        max_v = abs(max(v.min(), v.max(), key=abs))
+
+        max_v =  abs(max(min(v), max(v), key=abs)) if type(v)== list else abs(max(v.min(), v.max(), key=abs))
         return max_v,v,a
 
     c = unit_to_pulse(1, lead)
@@ -568,18 +571,26 @@ def velocity_movement(module_tmcm_1276,data_source,enable_log=False,sample_rate=
     else: 
         max_v, v, a = get_velocity_pram(v, a,1)
 
-    v, a = v.astype(int), a.astype(int)
-    if c*max_v > 300000:
-        print("Over speed:", c*max_v)
-        #raise Exception
+    if max_v > MAX_SPEED:
+        print("Over speed:", max_v)
+        v[:] = [int(item) if item < MAX_SPEED else MAX_SPEED  for item in v]
+        a[:] = [int(item) if item < MAX_SPEED else MAX_SPEED  for item in a]
+    else :
+        _v=list()
+        _a=list()
+        _v[:] = [int(item) for item in v]
+        _a[:] = [int(item) for item in a]
+        v=_v
+        a=_a
+        del _v,_a
+
     module_tmcm_1276.setMaxVelocity(MAX_SPEED)
     i = 0
     movement_log = []
-    while i < 1:
-        module_tmcm_1276.stop()
+    while i < loop_number:
         for v_item, a_item in zip(v, a):
-            module_tmcm_1276.setMaxAcceleration(int(a_item))
-            module_tmcm_1276.rotate(int(v_item))
+            module_tmcm_1276.rotate(v_item)
+            module_tmcm_1276.setMaxAcceleration(a_item)
             time.sleep(.02)
         i += 1
         print(i)
@@ -635,7 +646,6 @@ def main(*args):
         end_stop_sw_status(tmcm)
 
     if args[0].init:
-
         try:
             multi_process(module_tmcm_1276, init_move_mm, [int(args[0].init)])
             #init_move_mm(module_tmcm_1276[0], int(args[0].init))
@@ -649,30 +659,38 @@ def main(*args):
         print("RFS is done.")
     # **********************
     print("Current position is:", module_tmcm_1276[0].getActualPosition())
-    end_stop_sw_status(module_tmcm_1276[0])
-    set_automatic_stop(module_tmcm_1276[0], False)
-    move_back_zoro(module_tmcm_1276[0])
+    for tmcm in module_tmcm_1276:
+        end_stop_sw_status(tmcm)
+        print_position(tmcm)
+        set_automatic_stop(tmcm, False)
+
+    multi_process(module_tmcm_1276,move_back_zoro,[])
+
+
     # module_tmcm_1276.rotate(-300000)
     temp = input("Waiting for starting command")
     # test(module_tmcm_1276,3)
     # module_tmcm_1276.setActualPosition(-unit_to_pulse(min_position))  # set start point of motor
-    print_position(module_tmcm_1276[0])
-    print("trajectory is loading")
     for tmcm in module_tmcm_1276:
+        print_position(tmcm)
         set_automatic_stop(tmcm, False)
+    print("trajectory is loading")
+
     
-    motion=list(range(number_of_axis))
+    motion={x: [] for x in range(number_of_axis)}
     motion[0]=np.array(selecting_column(read_csv_file("complete.csv",'\t',False),0))
     motion[1]=np.array(selecting_column(read_csv_file("complete.csv",'\t',False),2))
     motion[0]=calc_motion(motion[0],"x-axis.csv")# *10 :converting cm to mm
     motion[1]=calc_motion(motion[1],"z-axis.csv")
-    
-    for idx, _motion in enumerate(motion):
-        velocity_movement(module_tmcm_1276[idx],motion[idx])
+   
+    multi_process(module_tmcm_1276,velocity_movement,motion)
+    #for idx, _motion in enumerate(motion):
+    #    velocity_movement(module_tmcm_1276[idx],motion[idx])
     # while True:
     #     end_stop_status(module_tmcm_1276)
     # movement_log = general_move(module_tmcm_1276)
-    #movement_log = velocity_movement(        module_tmcm_1276[0], lead, filename="sin_taj.csv")
+
+    #movement_log = velocity_movement(module_tmcm_1276[0], data_source="sin_taj.csv",over_data=True)
 
     for tmcm in module_tmcm_1276:
         tmcm.stop()
@@ -700,13 +718,23 @@ def calc_motion(x,output_file:str=None):
             log_writer.writerows([x, v ,a])
     return x,v,a
 
-def multi_process(module_tmcm_1276, func_name: Callable[..., Any], func_args: list):
+def multi_process(module_tmcm_1276, func_name: Callable[..., Any], func_args: Iterable[Any] =list()):
     cmd = []
-    _func_args = []
-    for tmcm in module_tmcm_1276:
-        _func_args = [tmcm]+func_args
+    _func_args = [[] for x in range(len(func_args))]
+
+    if type(func_args)==list:
+
+        for tmcm in module_tmcm_1276:
+            _func_args.append([tmcm]+func_args)
+    elif type(func_args)==dict:
+        for tmcm, idx in zip(module_tmcm_1276,func_args):
+            _func_args[idx].append(tmcm)
+            _func_args[idx].append(func_args[idx])
+    else:
+        raise NotImplementedError
+    for idx, tmcm in enumerate(module_tmcm_1276):
         cmd.append(multiprocessing.Process(target=func_name,
-                                           args=_func_args))
+                                           args=_func_args[idx]))
     for item in cmd:
         item.start()
     for item in cmd:

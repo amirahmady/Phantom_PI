@@ -39,18 +39,22 @@ def calculate_motion(position: list, Fs: int = 50, duration: float = 0, time_ser
     if not time_series:
         duration = duration if duration else len(position)*dt
         _time = np.arange(0, duration, dt)
+        time_series=_time
     else:
         _time = np.array(time_series)
 
     if len(position) != len(_time):
         print("Postition arrays and time_series should have a same lenght.")
         raise ValueError
+    
     _pos = np.round(np.array(position), 10)
     _time = np.round(np.diff(_time), 6)
 
     velocities = np.round(np.diff(_pos)/_time, 6)  # first derivative
     accelerationes = np.round(
         np.diff(velocities)/_time[:-1], 6)  # second derivative
+
+    #self.calc_x()
 
     return velocities, accelerationes
 
