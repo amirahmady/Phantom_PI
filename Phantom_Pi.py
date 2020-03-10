@@ -347,7 +347,7 @@ def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0,
         rep=rep, lep=lep, axis=axis), int(MAX_SPEED/4))
     set_position(module_tmcm_1276, 0)
     move_back_zoro(module_tmcm_1276)
-    print('ri:', TMCM.getGlobalParameter(71, 0),"RSF has done, Moved to Zero")
+    print('ri:', module_tmcm_1276.getGlobalParameter(71, 0),"RSF has done, Moved to Zero")
 
     return True
 
@@ -409,14 +409,13 @@ def set_automatic_stop(module_tmcm_1276, state: bool) -> bool:
     except:
         print("some thing went wrong")
         return False
-    else:
+    finally:
         right = module_tmcm_1276.getAxisParameter(
             module_tmcm_1276.APs.AutomaticRightStop)
         left = module_tmcm_1276.getAxisParameter(
             module_tmcm_1276.APs.AutomaticLeftStop)
         out = {'R': right, 'L':
                left}
-        #print("Auto Stop Mode", out)
         return state
     set_switch_Polarity(module_tmcm_1276, value=0)
 
@@ -477,15 +476,6 @@ def general_move(module_tmcm_1276, iteration=2):
     return print_position(module_tmcm_1276, display=False)
 
 
-# def run_trajectory(module_tmcm_1276, trajectory_data):
-#     start = time.time()
-#     for item in trajectory_data:
-#         start = time.time()
-#         print(item)
-#         move_to_unit(module_tmcm_1276, item*10)
-#         time_diff = time.time() - start
-#         if time_diff < 0.02:
-#             time.sleep(.02 - time_diff)
 
 
 def motor_init(module_tmcm_1276, stepping=8, max_acceleration=300000, max_speed=300000):
@@ -541,19 +531,16 @@ def write_log(movement_log,lead):
         log_writer.writerows(movement_log)
 
 
-def velocity_movement(module_tmcm_1276,data_source,enable_log=False,sample_rate=50,over_data=False,loop_number=1):
+def velocity_movement(module_tmcm_1276,data_source,enable_log=False,sample_rate=50,over_sample:int=None,loop_number=1):
     # TODO: Over X ?
     lead = module_tmcm_1276.lead
     def get_velocity_pram(v, a,step):
         # TODO: do calculatio regarding the Hz and sampling
         
-        v = v[::step]  # .02 values
-        a = a[::step]  # .02 values
-        #v[:] = [np.rint(3*c*item/4) for item in v]
-        #a[:] = [np.rint(3*c*item/4) for item in a]
+        v = v if step==1 else v[::step]  # .02 values
+        a = a if step==1 else a[::step]  # .02 values
         v[:] = [ceil(c*item) for item in v]
         a[:] = [ceil(c*item) for item in a]
-
         max_v =  abs(max(min(v), max(v), key=abs)) if type(v)== list else abs(max(v.min(), v.max(), key=abs))
         return max_v,v,a
 
@@ -565,12 +552,10 @@ def velocity_movement(module_tmcm_1276,data_source,enable_log=False,sample_rate=
     else:
         raise NotImplementedError
 
-    if over_data :
-        step=21 #TODO: why 21 make it dynamic
-        max_v, v, a = get_velocity_pram(v, a,step)
-    else: 
-        max_v, v, a = get_velocity_pram(v, a,1)
 
+
+    max_v, v, a = get_velocity_pram(v, a,1) if over_sample is None else get_velocity_pram(v, a,over_sample)
+    module_tmcm_1276.setMaxVelocity(MAX_SPEED)
     if max_v > MAX_SPEED:
         print("Over speed:", max_v)
         v[:] = [int(item) if item < MAX_SPEED else MAX_SPEED  for item in v]
@@ -583,18 +568,26 @@ def velocity_movement(module_tmcm_1276,data_source,enable_log=False,sample_rate=
         v=_v
         a=_a
         del _v,_a
-
-    module_tmcm_1276.setMaxVelocity(MAX_SPEED)
+   
     i = 0
     movement_log = []
-    while i < loop_number:
-        for v_item, a_item in zip(v, a):
-            module_tmcm_1276.rotate(v_item)
-            module_tmcm_1276.setMaxAcceleration(a_item)
-            time.sleep(.02)
-        i += 1
-        print(i)
-        print_position(module_tmcm_1276)
+    if enable_log:
+        while i < loop_number:
+            for v_item, a_item in zip(v, a):
+                module_tmcm_1276.rotate(v_item)
+                module_tmcm_1276.setMaxAcceleration(a_item)
+                time.sleep(.02)
+                movement_log.append([i,module_tmcm_1276.getActualPosition()])
+            i += 1
+    else:
+        while i < loop_number:
+            for v_item, a_item in zip(v, a):
+                module_tmcm_1276.rotate(v_item)
+                module_tmcm_1276.setMaxAcceleration(a_item)
+                time.sleep(.02)
+            i += 1
+            print(i)
+            print_position(module_tmcm_1276)
 
     module_tmcm_1276.setMaxAcceleration(MAX_SPEED)
     module_tmcm_1276.setMaxVelocity(MAX_SPEED)
