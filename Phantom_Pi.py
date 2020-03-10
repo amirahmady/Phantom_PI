@@ -177,7 +177,7 @@ def move_to_pp(module_tmcm_1276, position: int, speed=MAX_SPEED) -> bool:
 def move_to_unit(moduleTMCM_1276, position, unit='SI'):
     # add in or si postioning
     # print(position, move_by_mm(position))
-    moduleTMCM_1276.moveTo(unit_to_pulse(position, lead))
+    moduleTMCM_1276.moveTo(unit_to_pulse(position, moduleTMCM_1276.lead))
     moduleTMCM_1276.getAxisParameter(moduleTMCM_1276.APs.ActualPosition)
     while not (moduleTMCM_1276.positionReached()):
         pass
