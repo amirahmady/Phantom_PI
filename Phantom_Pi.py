@@ -713,12 +713,12 @@ def calc_motion(x,output_file:str=None):
 
 def multi_process(module_tmcm_1276, func_name: Callable[..., Any], func_args: Iterable[Any] =list()):
     cmd = []
-    _func_args = [[] for x in range(len(func_args))]
-
+    #if len(func_args) <> len(module_tmcm_1276)
+    _func_args = [[] for x in range(len(module_tmcm_1276))]
     if type(func_args)==list:
 
-        for tmcm in module_tmcm_1276:
-            _func_args.append([tmcm]+func_args)
+        for idx,tmcm in enumerate(module_tmcm_1276):
+            _func_args[idx]=[tmcm]+func_args
     elif type(func_args)==dict:
         for tmcm, idx in zip(module_tmcm_1276,func_args):
             _func_args[idx].append(tmcm)
