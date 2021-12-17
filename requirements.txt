@@ -10,3 +10,5 @@ PyTrinamic==0.1.18
 six==1.14.0
 typed-ast==1.4.1
 wrapt==1.11.2
+numpy
+matplotlib

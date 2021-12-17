@@ -115,7 +115,7 @@ def pulse_to_unit(pp:int, lead:float):
     return round(pp*lead, 5)
 
 
-def move_back_zoro(module_tmcm_1276, speed=153600):
+def move_back_zero(module_tmcm_1276, speed=153600):
     # print("current position is:", module_tmcm_1276.getActualPosition())
     # print("Moving back to 0")
     pos = sys.maxsize
@@ -346,7 +346,7 @@ def reference_search(module_tmcm_1276, mode=3, rfs_speed=200000, sw_telorance=0,
     move_to_pp(module_tmcm_1276, position_zero(
         rep=rep, lep=lep, axis=axis), int(MAX_SPEED/4))
     set_position(module_tmcm_1276, 0)
-    move_back_zoro(module_tmcm_1276)
+    move_back_zero(module_tmcm_1276)
     print('ri:', module_tmcm_1276.getGlobalParameter(71, 0),"RSF has done, Moved to Zero")
 
     return True
@@ -630,7 +630,7 @@ def main(*args):
 
 
 
-    print("Warning if motor is not around postion zero it will go there automaticly")
+    print("Warning if motor is not around postion zero it will go there automatically")
 
 
 
@@ -657,7 +657,7 @@ def main(*args):
         print_position(tmcm)
         set_automatic_stop(tmcm, False)
 
-    multi_process(module_tmcm_1276,move_back_zoro,[])
+    multi_process(module_tmcm_1276,move_back_zero,[])
 
 
     # module_tmcm_1276.rotate(-300000)
@@ -693,7 +693,7 @@ def main(*args):
     for tmcm in module_tmcm_1276:
         print_position(tmcm)
         tmcm.setMaxAcceleration(MAX_SPEED)
-    multi_process(module_tmcm_1276, move_back_zoro, [MAX_SPEED])
+    multi_process(module_tmcm_1276, move_back_zero, [MAX_SPEED])
     for tmcm in module_tmcm_1276:
         print_position(tmcm)
 

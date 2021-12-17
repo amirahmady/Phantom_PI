@@ -3,7 +3,7 @@
  ifconfig -a
  you can set static ip for raspberrypi too.
  https://www.makeuseof.com/raspberry-pi-set-static-ip/
- 
+
 3.By default your raspberry pi pi comes with an account 'pi' with the password 'raspberry'.
  you can generate ssh token for ease of use and not using password for your connection from laptop to PI.
   form this guide: <https://endjin.com/blog/2019/09/passwordless-ssh-from-windows-10-to-raspberry-pi>
@@ -49,3 +49,8 @@
         TX packets 0  bytes 0 (0.0 B)
         TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
         device interrupt 86
+
+step 8.
+ check virtual enviroment is avalible for pyhton  with:
+    $  source ~/Phantom_PI/.venv/bin/activate
+    if not use this command to install  venv $ python -m venv ~/Phantom_PI/.venv/
