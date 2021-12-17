@@ -17,7 +17,7 @@
 
 4. Here is refrence for installing  <https://wiki.seeedstudio.com/2-Channel-CAN-BUS-FD-Shield-for-Raspberry-Pi/>
 
- Install CAN-HAT¶
+ Install CAN-HAT
  Step 1. Open config.txt file
 
  sudo nano /boot/config.txt
@@ -49,8 +49,26 @@
         TX packets 0  bytes 0 (0.0 B)
         TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
         device interrupt 86
+<<<<<<< HEAD
 
 step 8.
  check virtual enviroment is avalible for pyhton  with:
     $  source ~/Phantom_PI/.venv/bin/activate
     if not use this command to install  venv $ python -m venv ~/Phantom_PI/.venv/
+=======
+        
+        
+ Install this packages: 
+  gcc, g++
+  and excute this command:
+  sudo apt install libelf_dev libpopt_dev
+ For installing  PyTrinamic packages pip has some issues:
+ try this command in your virtual environment.
+  pip install -U -I git+git  https://github.com/trinamic/PyTrinamic.git
+  
+  
+  
+Notes:
+  Moudle ID: Motor ID 
+  HostID : Device
+>>>>>>> cb5e090bd565b309ccf7c3e956b878c95edc8cbb
