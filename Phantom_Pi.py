@@ -20,7 +20,7 @@ from typing import Any, Callable, Iterable
 import numpy as np
 import PyTrinamic
 from PyTrinamic.connections.ConnectionManager import ConnectionManager
-from PyTrinamic.modules.TMCM_1276 import TMCM_1276
+from PyTrinamic.modules.TMCM1276.TMCM_1276 import TMCM_1276
 
 from constant import *
 from generate_motion import calculate_motion
