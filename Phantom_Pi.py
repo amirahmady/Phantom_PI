@@ -4,7 +4,7 @@ Move a motor back and forth using the TMCM1276 module
 Created on 18.12.2019
 @author: Amir Ahmady
 for socket can please run this cmd in terminal:
-# sudo ip link set can0 up type can bitrate 1000000
+$ sudo ip link set can0 up type can bitrate 1000000
 '''
 
 import argparse
